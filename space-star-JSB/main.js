@@ -22,11 +22,19 @@ let lastEnemySpawnDistance = 0;
 let spawnRate = 1000; // in meters
 
 // Movement variables
-let moveSpeed = 0.8; // Increased base movement speed
-let acceleration = 0.2; // Increased acceleration for more responsive movement
-let deceleration = 0.1; // Increased deceleration for smoother stopping
-let maxSpeed = 1.5; // Increased maximum speed
+let moveSpeed = 0.3; // Reduced from 0.8 to 0.3 for slower movement
+let acceleration = 0.1; // Reduced from 0.2 to 0.1 for smoother acceleration
+let deceleration = 0.05; // Reduced from 0.1 to 0.05 for smoother deceleration
+let maxSpeed = 0.8; // Reduced from 1.5 to 0.8 for lower maximum speed
 let currentVelocity = new THREE.Vector3(0, 0, 0); // Current movement velocity
+
+// Add movement state variables at the top with other game state variables
+let moveState = {
+    up: false,
+    down: false,
+    left: false,
+    right: false
+};
 
 // DOM Elements
 const menuScreen = document.getElementById('menu-screen');
@@ -82,6 +90,28 @@ function setupEventListeners() {
     
     // Keyboard controls
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', (event) => {
+        if (!gameActive) return;
+        
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'w':
+                moveState.up = false;
+                break;
+            case 'ArrowDown':
+            case 's':
+                moveState.down = false;
+                break;
+            case 'ArrowLeft':
+            case 'a':
+                moveState.left = false;
+                break;
+            case 'ArrowRight':
+            case 'd':
+                moveState.right = false;
+                break;
+        }
+    });
 }
 
 // Game state management functions
@@ -185,6 +215,15 @@ function setupThreeJS() {
 
 // Function to start the game
 function startGame() {
+    // Clean up any existing scene
+    if (scene) {
+        scene.children.forEach(child => {
+            if (child !== camera) {
+                scene.remove(child);
+            }
+        });
+    }
+    
     resetGameState();
     hideAllScreens();
     gameScreen.classList.add('active');
@@ -209,15 +248,42 @@ function startGame() {
 
 // Reset game state variables
 function resetGameState() {
+    // Reset game variables
     shields = 100;
     distance = 0;
     speed = 10;
     enemiesKilled = 0;
     lastEnemySpawnDistance = 0;
     spawnRate = 1000;
-    enemies = [];
-    playerLasers = [];
-    enemyLasers = [];
+    
+    // Reset movement variables
+    currentVelocity = new THREE.Vector3(0, 0, 0);
+    
+    // Clean up Three.js scene
+    if (scene) {
+        // Remove all objects except the camera
+        scene.children.forEach(child => {
+            if (child !== camera) {
+                scene.remove(child);
+            }
+        });
+        
+        // Reset arrays
+        enemies = [];
+        playerLasers = [];
+        enemyLasers = [];
+        explosions = [];
+        
+        // Recreate game objects
+        createStarsBackground();
+        createTunnel();
+        createSpaceship();
+        createReticle();
+        
+        // Reset camera position
+        camera.position.set(0, 1.5, 5);
+        camera.lookAt(0, 0, 0);
+    }
     
     // Update HUD
     updateHUD();
@@ -424,26 +490,26 @@ function createReticle() {
     scene.add(reticle);
 }
 
-// Handle keyboard controls
+// Update the handleKeyDown function
 function handleKeyDown(event) {
     if (!gameActive) return;
     
     switch (event.key) {
         case 'ArrowUp':
         case 'w':
-            moveSpaceship('up');
+            moveState.up = true;
             break;
         case 'ArrowDown':
         case 's':
-            moveSpaceship('down');
+            moveState.down = true;
             break;
         case 'ArrowLeft':
         case 'a':
-            moveSpaceship('left');
+            moveState.left = true;
             break;
         case 'ArrowRight':
         case 'd':
-            moveSpaceship('right');
+            moveState.right = true;
             break;
         case ' ':
             fireLaser();
@@ -454,26 +520,26 @@ function handleKeyDown(event) {
     }
 }
 
-// Move the spaceship based on input direction
-function moveSpaceship(direction) {
+// Update the moveSpaceship function
+function moveSpaceship() {
     if (!gameActive) return;
 
-    // Calculate target velocity based on input direction
+    // Calculate target velocity based on current move state
     const targetVelocity = new THREE.Vector3(0, 0, 0);
-    if (direction.includes('left')) targetVelocity.x = -maxSpeed;
-    if (direction.includes('right')) targetVelocity.x = maxSpeed;
-    if (direction.includes('up')) targetVelocity.y = maxSpeed;
-    if (direction.includes('down')) targetVelocity.y = -maxSpeed;
+    if (moveState.left) targetVelocity.x = -maxSpeed;
+    if (moveState.right) targetVelocity.x = maxSpeed;
+    if (moveState.up) targetVelocity.y = maxSpeed;
+    if (moveState.down) targetVelocity.y = -maxSpeed;
 
     // Smoothly interpolate current velocity towards target velocity
     currentVelocity.x += (targetVelocity.x - currentVelocity.x) * acceleration;
     currentVelocity.y += (targetVelocity.y - currentVelocity.y) * acceleration;
 
     // Apply deceleration when no input is given
-    if (!direction.includes('left') && !direction.includes('right')) {
+    if (!moveState.left && !moveState.right) {
         currentVelocity.x *= (1 - deceleration);
     }
-    if (!direction.includes('up') && !direction.includes('down')) {
+    if (!moveState.up && !moveState.down) {
         currentVelocity.y *= (1 - deceleration);
     }
 
@@ -485,19 +551,15 @@ function moveSpaceship(direction) {
     spaceship.position.x = Math.max(-2, Math.min(2, spaceship.position.x));
     spaceship.position.y = Math.max(-2, Math.min(2, spaceship.position.y));
 
-    // Update camera position to follow the ship smoothly
-    camera.position.x += (spaceship.position.x - camera.position.x) * 0.1;
-    camera.position.y += (spaceship.position.y - camera.position.y) * 0.1;
-
     // Update reticle position to follow spaceship
     reticle.position.x = spaceship.position.x;
     reticle.position.y = spaceship.position.y;
     reticle.position.z = spaceship.position.z - 5;
 
     // Slight spaceship rotation when moving for visual feedback
-    if (direction.includes('left')) {
+    if (moveState.left) {
         spaceship.rotation.z = Math.min(spaceship.rotation.z + 0.05, 0.2);
-    } else if (direction.includes('right')) {
+    } else if (moveState.right) {
         spaceship.rotation.z = Math.max(spaceship.rotation.z - 0.05, -0.2);
     } else {
         // Return to neutral rotation
@@ -508,7 +570,7 @@ function moveSpaceship(direction) {
         }
     }
 
-    // Update camera look-at
+    // Update camera look-at without moving the camera
     camera.lookAt(spaceship.position);
 }
 
@@ -1036,6 +1098,41 @@ function hideQuitModal() {
 // Quit the current game
 function quitGame() {
     quitModal.classList.remove('active');
+    
+    // Clean up Three.js scene
+    if (scene) {
+        // Remove all objects except the camera
+        scene.children.forEach(child => {
+            if (child !== camera) {
+                scene.remove(child);
+            }
+        });
+        
+        // Reset arrays
+        enemies = [];
+        playerLasers = [];
+        enemyLasers = [];
+        explosions = [];
+        
+        // Reset game state
+        gameActive = false;
+        shields = 100;
+        distance = 0;
+        speed = 10;
+        enemiesKilled = 0;
+        lastEnemySpawnDistance = 0;
+        spawnRate = 1000;
+        
+        // Reset movement state
+        moveState = {
+            up: false,
+            down: false,
+            left: false,
+            right: false
+        };
+        currentVelocity = new THREE.Vector3(0, 0, 0);
+    }
+    
     showMenuScreen();
 }
 
@@ -1051,6 +1148,9 @@ function animate() {
     }
     
     const deltaTime = Math.min(0.1, clock.getDelta()); // Cap to prevent large jumps
+    
+    // Update movement
+    moveSpaceship();
     
     // Update all game objects
     updateGameObjects(deltaTime);
