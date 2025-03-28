@@ -1,7 +1,7 @@
 /**
  * Main game logic for Tetris
  */
-class Game {
+window.Game = class Game {
     /**
      * Create a new game
      */
@@ -17,18 +17,19 @@ class Game {
         this.tetrominoFactory = new TetrominoFactory();
         this.scorer = new ScoringSystem();
         this.input = new InputHandler(this.gameContainer);
-        this.animation = new AnimationSystem(this.renderer);
+        this.animation = new AnimationSystem(this, this.renderer);
         this.audio = new AudioSystem();
         this.storage = new StorageSystem();
         
         // Game state
-        this.currentState = GAME_STATES.TITLE_SCREEN;
+        this.currentState = window.TETRIS.GAME_STATES.TITLE_SCREEN;
         this.currentPiece = null;
         this.nextPiece = null;
         this.lastDropTime = 0;
         this.lockDelayTime = 0;
         this.isPaused = false;
         this.isGameOver = false;
+        this._optionsSource = 'title'; // Track where we came from: 'title' or 'pause'
         
         // Set up input handlers
         this.setupInputHandlers();
@@ -46,48 +47,48 @@ class Game {
      */
     setupInputHandlers() {
         // Movement controls
-        this.input.onKeyDown(KEY_BINDINGS.LEFT, () => {
-            if (this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        this.input.onKeyDown(window.TETRIS.KEY_BINDINGS.LEFT, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
                 this.moveLeft();
             }
         });
         
-        this.input.onKeyDown(KEY_BINDINGS.RIGHT, () => {
-            if (this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        this.input.onKeyDown(window.TETRIS.KEY_BINDINGS.RIGHT, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
                 this.moveRight();
             }
         });
         
-        this.input.onKeyDown(KEY_BINDINGS.DOWN, () => {
-            if (this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        this.input.onKeyDown(window.TETRIS.KEY_BINDINGS.DOWN, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
                 this.softDrop();
             }
         });
         
         // Rotation
-        this.input.onKeyPress(KEY_BINDINGS.ROTATE, () => {
-            if (this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        this.input.onKeyPress(window.TETRIS.KEY_BINDINGS.ROTATE, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
                 this.rotatePiece();
             }
         });
         
         // Hard drop
-        this.input.onKeyPress(KEY_BINDINGS.HARD_DROP, () => {
-            if (this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        this.input.onKeyPress(window.TETRIS.KEY_BINDINGS.HARD_DROP, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
                 this.hardDrop();
             }
         });
         
         // Pause
-        this.input.onKeyPress(KEY_BINDINGS.PAUSE, () => {
-            if (this.currentState === GAME_STATES.PLAYING) {
+        this.input.onKeyPress(window.TETRIS.KEY_BINDINGS.PAUSE, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING) {
                 this.togglePause();
             }
         });
         
         // Restart
-        this.input.onKeyPress(KEY_BINDINGS.RESTART, () => {
-            if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.GAME_OVER) {
+        this.input.onKeyPress(window.TETRIS.KEY_BINDINGS.RESTART, () => {
+            if (this.currentState === window.TETRIS.GAME_STATES.PLAYING || this.currentState === window.TETRIS.GAME_STATES.GAME_OVER) {
                 this.restart();
             }
         });
@@ -97,10 +98,61 @@ class Game {
      * Set up UI button event listeners
      */
     setupUIEventListeners() {
-        // Title screen
-        document.getElementById('start-button').addEventListener('click', () => {
-            this.startGame();
-        });
+        // Title screen - Start button
+        const startButton = document.getElementById('start-button');
+        if (startButton) {
+            // Remove any existing listeners
+            const newStartButton = startButton.cloneNode(true);
+            startButton.parentNode.replaceChild(newStartButton, startButton);
+            
+            // Add new click listener with bound context
+            const boundStartGame = this.startGame.bind(this);
+            newStartButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                boundStartGame();
+            });
+        }
+        
+        // Title screen - Options button
+        const optionsButton = document.getElementById('options-button');
+        if (optionsButton) {
+            optionsButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showOptionsScreen();
+            });
+        }
+        
+        // Options screen - Save button
+        const saveOptionsButton = document.getElementById('save-options-button');
+        if (saveOptionsButton) {
+            saveOptionsButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.saveOptions();
+            });
+        }
+        
+        // Options screen - Cancel button
+        const cancelOptionsButton = document.getElementById('cancel-options-button');
+        if (cancelOptionsButton) {
+            cancelOptionsButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Hide options screen
+                document.getElementById('options-screen').classList.add('hidden');
+                
+                // Return to the appropriate screen based on source
+                if (this._optionsSource === 'pause') {
+                    // Show pause screen
+                    document.getElementById('pause-screen').classList.remove('hidden');
+                } else {
+                    this.showTitleScreen();
+                }
+            });
+        }
+        
+        // Initialize options form with current settings
+        this.updateOptionsForm();
         
         // Game screen
         document.getElementById('pause-button').addEventListener('click', () => {
@@ -128,6 +180,11 @@ class Game {
             this.showTitleScreen();
         });
         
+        // Add options button in pause screen
+        document.getElementById('options-from-pause-button').addEventListener('click', () => {
+            this.showOptionsFromPause();
+        });
+        
         // Game over screen
         document.getElementById('submit-score-button').addEventListener('click', () => {
             this.submitHighScore();
@@ -151,9 +208,21 @@ class Game {
      * Start the game
      */
     startGame() {
+        // Validate that we have all required properties
+        if (!this.board || !this.scorer || !this.animation || !this.input) {
+            return;
+        }
+        
         // Hide title screen, show game screen
-        document.getElementById('title-screen').classList.add('hidden');
-        document.getElementById('game-screen').classList.remove('hidden');
+        const titleScreen = document.getElementById('title-screen');
+        const gameScreen = document.getElementById('game-screen');
+        
+        if (!titleScreen || !gameScreen) {
+            return;
+        }
+        
+        titleScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
         
         // Set up game
         this.board.reset();
@@ -166,7 +235,7 @@ class Game {
         this.spawnPiece();
         
         // Update game state
-        this.currentState = GAME_STATES.PLAYING;
+        this.currentState = window.TETRIS.GAME_STATES.PLAYING;
         this.isPaused = false;
         this.isGameOver = false;
         
@@ -182,13 +251,105 @@ class Game {
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('pause-screen').classList.add('hidden');
         document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('options-screen').classList.add('hidden');
         
         // Show title screen
         document.getElementById('title-screen').classList.remove('hidden');
         
         // Update game state
-        this.currentState = GAME_STATES.TITLE_SCREEN;
+        this.currentState = window.TETRIS.GAME_STATES.TITLE_SCREEN;
         this.isPaused = false;
+        
+        // Reset option source tracking
+        this._optionsSource = 'title';
+    }
+    
+    /**
+     * Show the options screen
+     */
+    showOptionsScreen() {
+        // Track where we came from
+        this._optionsSource = 'title';
+        
+        // Hide title screen
+        document.getElementById('title-screen').classList.add('hidden');
+        
+        // Show options screen
+        document.getElementById('options-screen').classList.remove('hidden');
+        
+        // Update options form with current settings
+        this.updateOptionsForm();
+    }
+    
+    /**
+     * Update the options form with current audio settings
+     */
+    updateOptionsForm() {
+        const audioSettings = this.audio.getSettings();
+        
+        // Set theme selector
+        const themeSelector = document.getElementById('theme-selector');
+        if (themeSelector) {
+            themeSelector.value = audioSettings.currentTheme;
+        }
+        
+        // Set music toggle
+        const musicToggle = document.getElementById('music-toggle');
+        if (musicToggle) {
+            musicToggle.checked = audioSettings.musicEnabled;
+        }
+    }
+    
+    /**
+     * Show the options screen from pause menu
+     */
+    showOptionsFromPause() {
+        // Track where we came from
+        this._optionsSource = 'pause';
+        
+        // Hide pause screen
+        document.getElementById('pause-screen').classList.add('hidden');
+        
+        // Show options screen
+        document.getElementById('options-screen').classList.remove('hidden');
+        
+        // Update options form with current settings
+        this.updateOptionsForm();
+    }
+    
+    /**
+     * Save options from the form
+     */
+    saveOptions() {
+        // Get theme selection
+        const themeSelector = document.getElementById('theme-selector');
+        if (themeSelector) {
+            this.audio.setTheme(themeSelector.value);
+        }
+        
+        // Get music enabled setting
+        const musicToggle = document.getElementById('music-toggle');
+        if (musicToggle) {
+            this.audio.setMusicEnabled(musicToggle.checked);
+        }
+        
+        // Save settings
+        this.audio.saveSettings();
+        
+        // Hide options screen
+        document.getElementById('options-screen').classList.add('hidden');
+        
+        // Return to the appropriate screen based on source
+        if (this._optionsSource === 'pause') {
+            // Show pause screen
+            document.getElementById('pause-screen').classList.remove('hidden');
+            
+            // Ensure game stays paused
+            this.isPaused = true;
+            this.currentState = window.TETRIS.GAME_STATES.PAUSED;
+        } else {
+            this.showTitleScreen();
+        }
     }
     
     /**
@@ -199,10 +360,10 @@ class Game {
         
         if (this.isPaused) {
             document.getElementById('pause-screen').classList.remove('hidden');
-            this.currentState = GAME_STATES.PAUSED;
+            this.currentState = window.TETRIS.GAME_STATES.PAUSED;
         } else {
             document.getElementById('pause-screen').classList.add('hidden');
-            this.currentState = GAME_STATES.PLAYING;
+            this.currentState = window.TETRIS.GAME_STATES.PLAYING;
         }
     }
     
@@ -226,7 +387,7 @@ class Game {
         this.spawnPiece();
         
         // Update game state
-        this.currentState = GAME_STATES.PLAYING;
+        this.currentState = window.TETRIS.GAME_STATES.PLAYING;
         this.isPaused = false;
         this.isGameOver = false;
         
@@ -246,6 +407,15 @@ class Game {
         // Check for game over
         if (CollisionSystem.checkGameOver(this.board.grid, this.currentPiece)) {
             this.gameOver();
+            return; // Stop further processing when game over
+        }
+
+        // Additional game over condition - check if pieces are stacked to the top row
+        for (let x = 0; x < window.TETRIS.BOARD_WIDTH; x++) {
+            if (this.board.grid[0][x] !== 0) {
+                this.gameOver();
+                return;
+            }
         }
     }
     
@@ -256,7 +426,6 @@ class Game {
         if (!this.currentPiece) return;
         
         if (this.board.moveLeft(this.currentPiece)) {
-            this.audio.play('move');
             this.lockDelayTime = 0;
         }
     }
@@ -268,7 +437,6 @@ class Game {
         if (!this.currentPiece) return;
         
         if (this.board.moveRight(this.currentPiece)) {
-            this.audio.play('move');
             this.lockDelayTime = 0;
         }
     }
@@ -280,7 +448,6 @@ class Game {
         if (!this.currentPiece) return;
         
         if (this.board.moveDown(this.currentPiece)) {
-            this.audio.play('move');
             this.scorer.addSoftDropPoints(1);
             this.renderer.updateStats(this.scorer.getStats());
             this.lastDropTime = performance.now();
@@ -294,7 +461,6 @@ class Game {
         if (!this.currentPiece) return;
         
         const dropDistance = this.board.hardDrop(this.currentPiece);
-        this.audio.play('hardDrop');
         this.scorer.addHardDropPoints(dropDistance);
         this.renderer.updateStats(this.scorer.getStats());
         
@@ -309,7 +475,6 @@ class Game {
         if (!this.currentPiece) return;
         
         if (this.board.rotatePiece(this.currentPiece)) {
-            this.audio.play('rotate');
             this.lockDelayTime = 0;
         }
     }
@@ -318,19 +483,21 @@ class Game {
      * Lock the current piece into the board
      */
     lockPiece() {
-        const completedLines = this.board.lockPiece(this.currentPiece);
+        const result = this.board.lockPiece(this.currentPiece);
+        
+        // Check if game over was detected
+        if (typeof result === 'object' && result.gameOver === true) {
+            this.gameOver();
+            return;
+        }
+        
+        // Get the completed lines
+        const completedLines = Array.isArray(result) ? result : result.clearedLines || [];
         
         if (completedLines.length > 0) {
             // Add points for cleared lines
             const scoreResult = this.scorer.addLineClearPoints(completedLines.length);
             this.renderer.updateStats(this.scorer.getStats());
-            
-            // Play appropriate sound
-            if (completedLines.length === 4) {
-                this.audio.play('tetris');
-            } else {
-                this.audio.play('lineClear');
-            }
             
             // Add line clear animation
             this.animation.addLineClearAnimation(completedLines);
@@ -338,10 +505,7 @@ class Game {
             // Add level up animation if needed
             if (scoreResult.levelUp) {
                 this.animation.addLevelUpAnimation(scoreResult.level);
-                this.audio.play('levelUp');
             }
-        } else {
-            this.audio.play('drop');
         }
         
         // Spawn next piece
@@ -353,9 +517,8 @@ class Game {
      */
     gameOver() {
         this.isGameOver = true;
-        this.currentState = GAME_STATES.GAME_OVER;
+        this.currentState = window.TETRIS.GAME_STATES.GAME_OVER;
         this.animation.addGameOverAnimation();
-        this.audio.play('gameOver');
         
         // Update UI
         document.getElementById('final-score').textContent = this.scorer.score;
@@ -363,7 +526,7 @@ class Game {
         // Show game over screen after animation
         setTimeout(() => {
             document.getElementById('game-over-screen').classList.remove('hidden');
-        }, ANIMATION_DURATIONS.GAME_OVER);
+        }, window.TETRIS.ANIMATION_DURATIONS.GAME_OVER);
     }
     
     /**
@@ -389,15 +552,18 @@ class Game {
      */
     update(deltaTime) {
         // Skip updates if game is paused or over
-        if (this.isPaused || this.isGameOver || this.currentState !== GAME_STATES.PLAYING) {
+        if (this.isPaused || this.isGameOver || this.currentState !== window.TETRIS.GAME_STATES.PLAYING) {
             return;
         }
         
-        // Process input
-        this.input.update();
+        // Get current time once for this update cycle
+        const currentTime = performance.now();
+        
+        // Process input with current time for accurate key repeats
+        this.input.update(currentTime);
         
         // Update animations
-        const animationsActive = this.animation.update(performance.now());
+        const animationsActive = this.animation.update(currentTime);
         
         // Skip piece updates if animations are playing
         if (animationsActive) {
@@ -405,7 +571,6 @@ class Game {
         }
         
         // Check if it's time to drop the piece
-        const currentTime = performance.now();
         const dropInterval = this.scorer.getDropInterval();
         
         if (currentTime - this.lastDropTime > dropInterval) {
@@ -443,7 +608,7 @@ class Game {
         this.renderer.drawBoard(this.board.grid);
         
         // Draw current piece and ghost if game is active
-        if (this.currentPiece && this.currentState === GAME_STATES.PLAYING && !this.isPaused) {
+        if (this.currentPiece && this.currentState === window.TETRIS.GAME_STATES.PLAYING && !this.isPaused) {
             // Draw ghost piece (landing position)
             const ghostY = this.board.getGhostPosition(this.currentPiece);
             this.renderer.drawGhostPiece(this.currentPiece, ghostY);

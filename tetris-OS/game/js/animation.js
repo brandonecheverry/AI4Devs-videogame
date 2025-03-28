@@ -2,185 +2,146 @@
  * Animation system for Tetris
  */
 
-class AnimationSystem {
+window.AnimationSystem = class AnimationSystem {
     /**
      * Create a new animation system
-     * @param {Renderer} renderer - The game renderer
+     * @param {Game} game - The game instance
+     * @param {Renderer} renderer - The renderer instance
      */
-    constructor(renderer) {
+    constructor(game, renderer) {
+        this.game = game;
         this.renderer = renderer;
-        this.animations = [];
+        this.animations = new Map();
+        this.currentTime = 0;
     }
     
     /**
-     * Reset the animation system
+     * Start a line clear animation
+     * @param {number[]} lines - Array of line indices to clear
+     * @param {Function} onComplete - Callback to run when animation completes
      */
-    reset() {
-        this.animations = [];
+    startLineClearAnimation(lines, onComplete) {
+        const animation = {
+            type: 'lineClear',
+            lines: lines,
+            startTime: this.currentTime,
+            duration: window.TETRIS.ANIMATION_DURATIONS.LINE_CLEAR,
+            onComplete: onComplete
+        };
+        
+        this.animations.set('lineClear', animation);
     }
     
     /**
-     * Add a line clear animation
+     * Alias for startLineClearAnimation (for game.js compatibility)
      * @param {number[]} lines - Array of line indices to clear
      */
     addLineClearAnimation(lines) {
-        this.animations.push({
-            type: 'lineClear',
-            lines: [...lines], // Clone array to avoid mutation issues
-            startTime: performance.now(),
-            duration: ANIMATION_DURATIONS.LINE_CLEAR
-        });
+        this.startLineClearAnimation(lines);
     }
     
     /**
-     * Add a level up animation
+     * Start a level up animation
+     * @param {number} level - The new level
+     * @param {Function} onComplete - Callback to run when animation completes
+     */
+    startLevelUpAnimation(level, onComplete) {
+        const animation = {
+            type: 'levelUp',
+            level: level,
+            startTime: this.currentTime,
+            duration: window.TETRIS.ANIMATION_DURATIONS.LEVEL_UP,
+            onComplete: onComplete
+        };
+        
+        this.animations.set('levelUp', animation);
+    }
+    
+    /**
+     * Alias for startLevelUpAnimation (for game.js compatibility)
      * @param {number} level - The new level
      */
     addLevelUpAnimation(level) {
-        this.animations.push({
-            type: 'levelUp',
-            level: level,
-            startTime: performance.now(),
-            duration: ANIMATION_DURATIONS.LEVEL_UP
-        });
+        this.startLevelUpAnimation(level);
     }
     
     /**
-     * Add a piece movement animation
-     * @param {Tetromino} piece - The tetromino piece
-     * @param {number} fromX - Starting X position
-     * @param {number} fromY - Starting Y position
-     * @param {number} toX - Ending X position
-     * @param {number} toY - Ending Y position
+     * Start a game over animation
+     * @param {Function} onComplete - Callback to run when animation completes
      */
-    addPieceMoveAnimation(piece, fromX, fromY, toX, toY) {
-        this.animations.push({
-            type: 'pieceMove',
-            piece: piece,
-            fromX: fromX,
-            fromY: fromY,
-            toX: toX,
-            toY: toY,
-            startTime: performance.now(),
-            duration: ANIMATION_DURATIONS.PIECE_MOVEMENT
-        });
+    startGameOverAnimation(onComplete) {
+        const animation = {
+            type: 'gameOver',
+            startTime: this.currentTime,
+            duration: window.TETRIS.ANIMATION_DURATIONS.GAME_OVER,
+            onComplete: onComplete
+        };
+        
+        this.animations.set('gameOver', animation);
     }
     
     /**
-     * Add a piece rotation animation
-     * @param {Tetromino} piece - The tetromino piece
-     * @param {number[][]} fromMatrix - Starting matrix
-     * @param {number[][]} toMatrix - Ending matrix
-     */
-    addPieceRotationAnimation(piece, fromMatrix, toMatrix) {
-        this.animations.push({
-            type: 'pieceRotation',
-            piece: piece,
-            fromMatrix: fromMatrix,
-            toMatrix: toMatrix,
-            startTime: performance.now(),
-            duration: ANIMATION_DURATIONS.PIECE_ROTATION
-        });
-    }
-    
-    /**
-     * Add a game over animation
+     * Alias for startGameOverAnimation (for game.js compatibility)
      */
     addGameOverAnimation() {
-        this.animations.push({
-            type: 'gameOver',
-            startTime: performance.now(),
-            duration: ANIMATION_DURATIONS.GAME_OVER
-        });
+        this.startGameOverAnimation();
     }
     
     /**
-     * Update all active animations
-     * @param {number} currentTime - Current timestamp
-     * @returns {boolean} True if any animations are still active
+     * Update animations
+     * @param {number} currentTime - Current game time
      */
     update(currentTime) {
-        let active = false;
+        this.currentTime = currentTime;
         
-        for (let i = this.animations.length - 1; i >= 0; i--) {
-            const anim = this.animations[i];
-            const elapsed = currentTime - anim.startTime;
-            const progress = Math.min(elapsed / anim.duration, 1);
+        for (const [key, animation] of this.animations.entries()) {
+            const elapsed = currentTime - animation.startTime;
+            const progress = Math.min(elapsed / animation.duration, 1);
             
-            this.renderAnimation(anim, progress);
+            switch (animation.type) {
+                case 'lineClear':
+                    this.renderer.renderLineClearAnimation(animation.lines, progress);
+                    break;
+                case 'levelUp':
+                    this.renderer.renderLevelUpAnimation(animation.level, progress);
+                    break;
+                case 'gameOver':
+                    // Game over animation handled by CSS transitions
+                    break;
+            }
             
             if (progress >= 1) {
-                this.animations.splice(i, 1);
-            } else {
-                active = true;
+                if (animation.onComplete) {
+                    animation.onComplete();
+                }
+                this.animations.delete(key);
             }
         }
         
-        return active;
+        // Return whether animations are active
+        return this.isAnimating();
     }
     
     /**
-     * Render the specific animation based on type
-     * @param {Object} anim - Animation object
-     * @param {number} progress - Animation progress (0-1)
+     * Check if any animations are currently playing
+     * @returns {boolean} True if animations are playing
      */
-    renderAnimation(anim, progress) {
-        switch (anim.type) {
-            case 'lineClear':
-                this.renderer.renderLineClearAnimation(anim.lines, progress);
-                break;
-            case 'levelUp':
-                this.renderer.renderLevelUpAnimation(anim.level, progress);
-                break;
-            case 'gameOver':
-                this.renderGameOverAnimation(progress);
-                break;
-            // Other animation types can be added here
-        }
+    isAnimating() {
+        return this.animations.size > 0;
     }
     
     /**
-     * Render the game over animation
-     * @param {number} progress - Animation progress (0-1)
+     * Reset animation system state
      */
-    renderGameOverAnimation(progress) {
-        const ctx = this.renderer.gameCtx;
-        const canvas = this.renderer.gameCanvas;
-        
-        // Fade to black effect
-        ctx.fillStyle = `rgba(0, 0, 0, ${progress * 0.7})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Game over text
-        if (progress > 0.5) {
-            const textAlpha = (progress - 0.5) * 2; // 0 to 1 during second half
-            
-            ctx.font = 'bold 40px "Press Start 2P"';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
-            ctx.fillText(
-                'GAME OVER', 
-                canvas.width / 2, 
-                canvas.height / 2
-            );
-        }
+    reset() {
+        this.animations.clear();
+        this.currentTime = 0;
     }
     
     /**
-     * Check if there are any active animations of a specific type
-     * @param {string} type - Animation type to check for
-     * @returns {boolean} True if any animations of this type are active
+     * Stop all animations
      */
-    hasActiveAnimationType(type) {
-        return this.animations.some(anim => anim.type === type);
+    stopAll() {
+        this.animations.clear();
     }
-    
-    /**
-     * Check if there are any active animations
-     * @returns {boolean} True if any animations are active
-     */
-    hasActiveAnimations() {
-        return this.animations.length > 0;
-    }
-} 
+}; 

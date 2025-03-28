@@ -2,221 +2,223 @@
  * Input handling system for Tetris
  */
 
-class InputHandler {
+window.InputHandler = class InputHandler {
     /**
-     * Create new input handler
+     * Create a new input handler
      * @param {HTMLElement} gameContainer - The game container element
      */
     constructor(gameContainer) {
-        // Key state tracking
-        this.keys = {};
-        this.keyPressHandlers = {};
-        this.keyDownHandlers = {};
+        // Store key callbacks
+        this.keyDownCallbacks = {};
+        this.keyPressCallbacks = {};
         
-        // Key repeat settings
-        this.keyRepeatEnabled = {
-            [KEY_BINDINGS.LEFT]: true,
-            [KEY_BINDINGS.RIGHT]: true,
-            [KEY_BINDINGS.DOWN]: true,
-        };
-        this.keyRepeatDelay = 150; // ms before key starts repeating
-        this.keyRepeatRate = 50;   // ms between repeats
-        this.keyLastRepeat = {};
+        // Track key states
+        this.keyState = {};
+        this.lastKeyTime = {};
+        this.keyRepeatCount = {};
         
-        // Mobile controls
-        this.isMobile = this.detectMobile();
-        this.mobileControlsElement = document.getElementById('mobile-controls');
+        // Key repeat settings - faster for movement keys
+        this.repeatDelay = 150;     // ms before first repeat (shorter for more responsive feel)
+        this.repeatInterval = 50;   // ms between repeats
         
-        // Initialization
-        this.setupKeyboardControls();
-        if (this.isMobile) {
-            this.setupTouchControls();
+        // Faster repeat settings for arrow keys
+        this.fastKeys = [
+            window.TETRIS.KEY_BINDINGS.LEFT,
+            window.TETRIS.KEY_BINDINGS.RIGHT,
+            window.TETRIS.KEY_BINDINGS.DOWN
+        ];
+        this.fastRepeatDelay = 100;     // Shorter initial delay for arrow keys
+        this.fastRepeatInterval = 30;   // Shorter interval for rapid movement
+        
+        // Bind methods
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+        
+        // Set up event listeners
+        document.addEventListener('keydown', this.handleKeyDown);
+        document.addEventListener('keyup', this.handleKeyUp);
+        
+        // Set up mobile controls if container provided
+        if (gameContainer) {
+            this.setupMobileControls(gameContainer);
         }
     }
     
     /**
-     * Detect if the device is mobile
-     * @returns {boolean} True if mobile device detected
+     * Register a callback for when a key is held down (with repeat)
+     * @param {string} key - The key to listen for
+     * @param {Function} callback - The function to call
      */
-    detectMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-            window.innerWidth <= 768;
+    onKeyDown(key, callback) {
+        this.keyDownCallbacks[key] = callback;
     }
     
     /**
-     * Set up keyboard event listeners
+     * Register a callback for when a key is pressed (once per press)
+     * @param {string} key - The key to listen for
+     * @param {Function} callback - The function to call
      */
-    setupKeyboardControls() {
-        // Keydown event
-        window.addEventListener('keydown', (e) => {
-            // Prevent defaults for game control keys to avoid page scrolling etc.
-            if (Object.values(KEY_BINDINGS).includes(e.key)) {
-                e.preventDefault();
+    onKeyPress(key, callback) {
+        this.keyPressCallbacks[key] = callback;
+    }
+    
+    /**
+     * Handle key down events
+     * @param {KeyboardEvent} event - The keyboard event
+     */
+    handleKeyDown(event) {
+        const key = event.key;
+        
+        // Prevent default behavior for game controls
+        if (Object.values(window.TETRIS.KEY_BINDINGS).includes(key)) {
+            event.preventDefault();
+        }
+        
+        // If key is newly pressed
+        if (!this.keyState[key]) {
+            this.keyState[key] = true;
+            this.lastKeyTime[key] = performance.now();
+            this.keyRepeatCount[key] = 0;
+            
+            // Trigger the key press callback (once per press)
+            if (this.keyPressCallbacks[key]) {
+                this.keyPressCallbacks[key]();
             }
             
-            if (!this.keys[e.key]) {
-                // Key was just pressed
-                this.keys[e.key] = true;
+            // Trigger the key down callback immediately
+            if (this.keyDownCallbacks[key]) {
+                this.keyDownCallbacks[key]();
+            }
+        }
+    }
+    
+    /**
+     * Handle key up events
+     * @param {KeyboardEvent} event - The keyboard event
+     */
+    handleKeyUp(event) {
+        const key = event.key;
+        this.keyState[key] = false;
+        delete this.keyRepeatCount[key];
+    }
+    
+    /**
+     * Update input state, handle key repeats
+     * @param {number} currentTime - Current time in ms
+     */
+    update(currentTime) {
+        // Process key repeats for held down keys
+        for (const [key, isPressed] of Object.entries(this.keyState)) {
+            if (isPressed && this.keyDownCallbacks[key]) {
+                const timeSinceLastTrigger = currentTime - this.lastKeyTime[key];
                 
-                // Trigger key press handlers
-                if (this.keyPressHandlers[e.key]) {
-                    this.keyPressHandlers[e.key]();
+                // Determine if this is a fast-repeat key (arrow key)
+                const isFastKey = this.fastKeys.includes(key);
+                const repeatDelay = isFastKey ? this.fastRepeatDelay : this.repeatDelay;
+                let repeatInterval = isFastKey ? this.fastRepeatInterval : this.repeatInterval;
+                
+                // For arrow key movement, get faster with longer press
+                if (isFastKey && this.keyRepeatCount[key] > 10) {
+                    // Make repeat interval even shorter after 10 repeats
+                    repeatInterval = Math.max(repeatInterval / 2, 15);
                 }
                 
-                // Set up key repeat
-                if (this.keyRepeatEnabled[e.key]) {
-                    this.keyLastRepeat[e.key] = Date.now() + this.keyRepeatDelay;
-                }
-            }
-        });
-        
-        // Keyup event
-        window.addEventListener('keyup', (e) => {
-            this.keys[e.key] = false;
-        });
-    }
-    
-    /**
-     * Set up touch controls for mobile devices
-     */
-    setupTouchControls() {
-        // Show mobile controls
-        this.mobileControlsElement.classList.remove('hidden');
-        
-        // Set up mobile button handlers
-        document.getElementById('mobile-left').addEventListener('touchstart', () => {
-            this.simulateKeyPress(KEY_BINDINGS.LEFT);
-        });
-        
-        document.getElementById('mobile-right').addEventListener('touchstart', () => {
-            this.simulateKeyPress(KEY_BINDINGS.RIGHT);
-        });
-        
-        document.getElementById('mobile-rotate').addEventListener('touchstart', () => {
-            this.simulateKeyPress(KEY_BINDINGS.ROTATE);
-        });
-        
-        document.getElementById('mobile-drop').addEventListener('touchstart', () => {
-            this.simulateKeyPress(KEY_BINDINGS.HARD_DROP);
-        });
-        
-        document.getElementById('mobile-pause').addEventListener('touchstart', () => {
-            this.simulateKeyPress(KEY_BINDINGS.PAUSE);
-        });
-        
-        // Add touch hold handlers for movement keys
-        this.setupTouchHold('mobile-left', KEY_BINDINGS.LEFT);
-        this.setupTouchHold('mobile-right', KEY_BINDINGS.RIGHT);
-        this.setupTouchHold('mobile-drop', KEY_BINDINGS.DOWN);
-    }
-    
-    /**
-     * Set up touch hold for continuous movement
-     * @param {string} elementId - Element ID of the button
-     * @param {string} key - The key to simulate
-     */
-    setupTouchHold(elementId, key) {
-        const element = document.getElementById(elementId);
-        let holdInterval = null;
-        
-        // Start holding on touch start
-        element.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent default touch behavior
-            
-            // Initial key press
-            this.simulateKeyPress(key);
-            
-            // Start repeating
-            holdInterval = setInterval(() => {
-                this.simulateKeyPress(key);
-            }, this.keyRepeatRate);
-        });
-        
-        // End holding on touch end or cancel
-        const endHold = () => {
-            if (holdInterval) {
-                clearInterval(holdInterval);
-                holdInterval = null;
-            }
-            this.keys[key] = false;
-        };
-        
-        element.addEventListener('touchend', endHold);
-        element.addEventListener('touchcancel', endHold);
-    }
-    
-    /**
-     * Simulate a key press programmatically
-     * @param {string} key - The key to simulate
-     */
-    simulateKeyPress(key) {
-        this.keys[key] = true;
-        
-        if (this.keyPressHandlers[key]) {
-            this.keyPressHandlers[key]();
-        }
-        
-        // For continuous keys, update repeat time
-        if (this.keyRepeatEnabled[key]) {
-            this.keyLastRepeat[key] = Date.now();
-        }
-    }
-    
-    /**
-     * Register a handler for a key press event (fires once per press)
-     * @param {string} key - The key to listen for
-     * @param {Function} handler - The handler function to call
-     */
-    onKeyPress(key, handler) {
-        this.keyPressHandlers[key] = handler;
-    }
-    
-    /**
-     * Register a handler for a key held down state (fires continuously)
-     * @param {string} key - The key to listen for
-     * @param {Function} handler - The handler function to call
-     */
-    onKeyDown(key, handler) {
-        this.keyDownHandlers[key] = handler;
-    }
-    
-    /**
-     * Check if a key is currently pressed
-     * @param {string} key - The key to check
-     * @returns {boolean} True if key is pressed
-     */
-    isKeyDown(key) {
-        return this.keys[key] === true;
-    }
-    
-    /**
-     * Update method to be called each frame, handles continuous key presses
-     */
-    update() {
-        const now = Date.now();
-        
-        // Handle continuous key presses with repeat rate
-        for (const key in this.keyDownHandlers) {
-            if (this.isKeyDown(key)) {
-                if (this.keyRepeatEnabled[key]) {
-                    // Check if it's time to repeat
-                    if (now >= this.keyLastRepeat[key]) {
-                        this.keyDownHandlers[key]();
-                        this.keyLastRepeat[key] = now + this.keyRepeatRate;
+                // Initial delay before starting repeats
+                if (timeSinceLastTrigger > repeatDelay) {
+                    // How many repeats should have happened since the delay elapsed
+                    const repeatCount = Math.floor((timeSinceLastTrigger - repeatDelay) / repeatInterval);
+                    
+                    // If we've reached the time for another repeat
+                    if (repeatCount > 0) {
+                        // Update the last key time, accounting for any extra time
+                        this.lastKeyTime[key] = currentTime - (timeSinceLastTrigger % repeatInterval);
+                        
+                        // Increment repeat count for this key (for accelerating speed)
+                        this.keyRepeatCount[key] = (this.keyRepeatCount[key] || 0) + 1;
+                        
+                        // Trigger the callback
+                        this.keyDownCallbacks[key]();
                     }
-                } else {
-                    // Non-repeating keys just fire continuously
-                    this.keyDownHandlers[key]();
                 }
             }
         }
     }
     
     /**
-     * Reset input state (e.g., when game is reset or paused)
+     * Set up mobile touch controls
+     * @param {HTMLElement} gameContainer - The game container element
+     */
+    setupMobileControls(gameContainer) {
+        const mobileControls = document.getElementById('mobile-controls');
+        if (!mobileControls) return;
+        
+        // Only show mobile controls on touch devices
+        if ('ontouchstart' in window) {
+            mobileControls.classList.remove('hidden');
+            
+            // Mobile control mappings (button ID -> keyboard key)
+            const mobileButtonToKey = {
+                'mobile-left': window.TETRIS.KEY_BINDINGS.LEFT,
+                'mobile-right': window.TETRIS.KEY_BINDINGS.RIGHT,
+                'mobile-down': window.TETRIS.KEY_BINDINGS.DOWN,
+                'mobile-rotate': window.TETRIS.KEY_BINDINGS.ROTATE,
+                'mobile-drop': window.TETRIS.KEY_BINDINGS.HARD_DROP,
+                'mobile-pause': window.TETRIS.KEY_BINDINGS.PAUSE
+            };
+            
+            // Add touch handlers for each mobile button
+            for (const [buttonId, keyCode] of Object.entries(mobileButtonToKey)) {
+                const button = document.getElementById(buttonId);
+                if (!button) continue;
+                
+                // Touch start - similar to key down
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    
+                    // Simulate key press
+                    this.keyState[keyCode] = true;
+                    this.lastKeyTime[keyCode] = performance.now();
+                    this.keyRepeatCount[keyCode] = 0;
+                    
+                    // Call appropriate callbacks
+                    if (this.keyPressCallbacks[keyCode]) {
+                        this.keyPressCallbacks[keyCode]();
+                    }
+                    
+                    if (this.keyDownCallbacks[keyCode]) {
+                        this.keyDownCallbacks[keyCode]();
+                    }
+                });
+                
+                // Touch end - similar to key up
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.keyState[keyCode] = false;
+                    delete this.keyRepeatCount[keyCode];
+                });
+                
+                // Prevent touch move to avoid issues
+                button.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                });
+            }
+        }
+    }
+    
+    /**
+     * Reset all input state
      */
     reset() {
-        this.keys = {};
-        this.keyLastRepeat = {};
+        this.keyState = {};
+        this.lastKeyTime = {};
+        this.keyRepeatCount = {};
     }
-} 
+    
+    /**
+     * Clean up event listeners
+     */
+    cleanup() {
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
+    }
+}; 

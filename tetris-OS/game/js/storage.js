@@ -1,7 +1,10 @@
 /**
  * Storage system for Tetris high scores
  */
-class StorageSystem {
+window.StorageSystem = class StorageSystem {
+    /**
+     * Create a new storage system
+     */
     constructor() {
         this.highScores = this.loadHighScores();
     }
@@ -12,10 +15,9 @@ class StorageSystem {
      */
     loadHighScores() {
         try {
-            const scores = localStorage.getItem(STORAGE_KEYS.HIGH_SCORES);
+            const scores = localStorage.getItem(window.TETRIS.STORAGE_KEYS.HIGH_SCORES);
             return scores ? JSON.parse(scores) : [];
         } catch (error) {
-            console.error('Error loading high scores:', error);
             return [];
         }
     }
@@ -25,9 +27,12 @@ class StorageSystem {
      */
     saveHighScores() {
         try {
-            localStorage.setItem(STORAGE_KEYS.HIGH_SCORES, JSON.stringify(this.highScores));
+            localStorage.setItem(
+                window.TETRIS.STORAGE_KEYS.HIGH_SCORES,
+                JSON.stringify(this.highScores)
+            );
         } catch (error) {
-            console.error('Error saving high scores:', error);
+            // Silent failure
         }
     }
     
@@ -35,81 +40,64 @@ class StorageSystem {
      * Add a new high score
      * @param {string} name - Player name
      * @param {number} score - Player score
-     * @param {number} level - Player level
-     * @param {number} lines - Lines cleared
-     * @returns {boolean} True if score was high enough to be added
+     * @param {number} level - Final level reached
+     * @param {number} lines - Total lines cleared
      */
     addHighScore(name, score, level, lines) {
+        // Create new score entry
         const newScore = {
-            name: name || 'Anonymous',
-            score,
-            level,
-            lines,
+            name: name.substring(0, 10), // Limit name length
+            score: score,
+            level: level,
+            lines: lines,
             date: new Date().toISOString()
         };
         
-        // Add new score
+        // Add to array and sort
         this.highScores.push(newScore);
-        
-        // Sort high scores (highest first)
         this.highScores.sort((a, b) => b.score - a.score);
         
-        // Keep only top 10 scores
-        if (this.highScores.length > 10) {
-            this.highScores = this.highScores.slice(0, 10);
-        }
+        // Keep only top scores
+        this.highScores = this.highScores.slice(0, window.TETRIS.MAX_HIGH_SCORES);
         
         // Save to storage
         this.saveHighScores();
         
-        // Return true if score was in top 10
-        return this.isHighScore(score);
+        // Update display
+        this.updateHighScoreDisplay();
     }
     
     /**
-     * Check if a score would be a high score
+     * Check if a score qualifies as a high score
      * @param {number} score - Score to check
-     * @returns {boolean} True if score is a high score
+     * @returns {boolean} True if score qualifies
      */
     isHighScore(score) {
-        return this.highScores.length < 10 || score > this.getLowestHighScore();
-    }
-    
-    /**
-     * Get the lowest high score
-     * @returns {number} Lowest high score
-     */
-    getLowestHighScore() {
-        if (this.highScores.length === 0) {
-            return 0;
+        if (this.highScores.length < window.TETRIS.MAX_HIGH_SCORES) {
+            return true;
         }
-        return this.highScores[this.highScores.length - 1].score;
+        return score > this.highScores[this.highScores.length - 1].score;
     }
     
     /**
-     * Get all high scores
-     * @returns {Array} Array of high score objects
-     */
-    getHighScores() {
-        return [...this.highScores];
-    }
-    
-    /**
-     * Update the high score display in the DOM
+     * Update the high scores display
      */
     updateHighScoreDisplay() {
-        const highScoresList = document.getElementById('high-scores-list');
-        highScoresList.innerHTML = '';
+        const container = document.getElementById('high-scores-list');
+        if (!container) return;
+        
+        // Clear existing entries
+        container.innerHTML = '';
         
         if (this.highScores.length === 0) {
-            const noScores = document.createElement('div');
-            noScores.textContent = 'No high scores yet!';
-            noScores.className = 'no-scores';
-            highScoresList.appendChild(noScores);
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'high-score-empty';
+            emptyMessage.textContent = 'No high scores yet!';
+            container.appendChild(emptyMessage);
             return;
         }
         
-        // Add each high score to the list
+        // Create entries for each score
         this.highScores.forEach((score, index) => {
             const entry = document.createElement('div');
             entry.className = 'high-score-entry';
@@ -124,13 +112,44 @@ class StorageSystem {
             
             const scoreValue = document.createElement('div');
             scoreValue.className = 'high-score-score';
-            scoreValue.textContent = score.score;
+            scoreValue.textContent = score.score.toLocaleString();
+            
+            const details = document.createElement('div');
+            details.className = 'high-score-details';
+            details.textContent = `Level ${score.level} - ${score.lines} lines`;
+            
+            const date = document.createElement('div');
+            date.className = 'high-score-date';
+            date.textContent = new Date(score.date).toLocaleDateString();
             
             entry.appendChild(rank);
             entry.appendChild(name);
             entry.appendChild(scoreValue);
+            entry.appendChild(details);
+            entry.appendChild(date);
             
-            highScoresList.appendChild(entry);
+            container.appendChild(entry);
         });
+    }
+    
+    /**
+     * Show the high scores modal
+     */
+    showHighScores() {
+        const modal = document.getElementById('high-scores-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            this.updateHighScoreDisplay();
+        }
+    }
+    
+    /**
+     * Hide the high scores modal
+     */
+    hideHighScores() {
+        const modal = document.getElementById('high-scores-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
     }
 } 

@@ -1,31 +1,63 @@
 /**
- * Board management system for Tetris
+ * Game board for Tetris
  */
 
-class Board {
+window.Board = class Board {
     /**
      * Create a new game board
      */
     constructor() {
-        this.reset();
+        this.width = window.TETRIS.BOARD_WIDTH;
+        this.height = window.TETRIS.BOARD_HEIGHT;
+        this.grid = this.createEmptyGrid();
     }
     
     /**
-     * Reset the board to initial state
+     * Create an empty grid
+     * @returns {number[][]} Empty grid array
+     */
+    createEmptyGrid() {
+        return Array(this.height).fill(null)
+            .map(() => Array(this.width).fill(0));
+    }
+    
+    /**
+     * Reset the board
      */
     reset() {
-        // Create empty grid
-        this.grid = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
-        this.dirty = true; // Mark for complete redraw
+        this.grid = this.createEmptyGrid();
     }
     
     /**
-     * Lock the current piece into the board
-     * @param {Tetromino} piece - The active tetromino to lock
-     * @returns {number[]} Array of indices of completed lines (if any)
+     * Check if a position is valid on the board
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @returns {boolean} True if position is valid
+     */
+    isValidPosition(x, y) {
+        return x >= 0 && x < this.width && y >= 0 && y < this.height;
+    }
+    
+    /**
+     * Check if a cell is empty
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @returns {boolean} True if cell is empty
+     */
+    isCellEmpty(x, y) {
+        if (!this.isValidPosition(x, y)) return false;
+        return this.grid[y][x] === 0;
+    }
+    
+    /**
+     * Lock a piece in place on the board
+     * @param {Tetromino} piece - The piece to lock
+     * @returns {number[]} Array of cleared line indices
      */
     lockPiece(piece) {
         const matrix = piece.getMatrix();
+        const pieceId = piece.id;
+        let reachedTop = false;
         
         for (let y = 0; y < matrix.length; y++) {
             for (let x = 0; x < matrix[y].length; x++) {
@@ -33,126 +65,136 @@ class Board {
                     const boardX = piece.x + x;
                     const boardY = piece.y + y;
                     
-                    // Only lock if within board boundaries
-                    if (
-                        boardX >= 0 && 
-                        boardX < BOARD_WIDTH &&
-                        boardY >= 0 && 
-                        boardY < BOARD_HEIGHT
-                    ) {
-                        this.grid[boardY][boardX] = piece.id;
+                    // Check if any part of the piece is near the top of the board
+                    if (boardY <= 1) {
+                        reachedTop = true;
+                    }
+                    
+                    if (this.isValidPosition(boardX, boardY)) {
+                        this.grid[boardY][boardX] = pieceId;
                     }
                 }
             }
         }
         
-        this.dirty = true;
-        return this.checkCompletedLines();
-    }
-    
-    /**
-     * Check and clear completed lines
-     * @returns {number[]} Array of indices of completed lines
-     */
-    checkCompletedLines() {
-        const completedLines = [];
+        // Check for completed lines and return them
+        const clearedLines = this.clearLines();
         
-        // Check each line from bottom to top
-        for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-            // If every cell in this row is filled (non-zero)
-            if (this.grid[y].every(cell => cell !== 0)) {
-                completedLines.push(y);
+        // If the piece reached the top and no lines were cleared, it might be game over
+        if (reachedTop && clearedLines.length === 0) {
+            // Check top two rows for blocks
+            for (let y = 0; y < 2; y++) {
+                for (let x = 0; x < this.width; x++) {
+                    if (this.grid[y][x] !== 0) {
+                        // Return a special marker for game over
+                        return { clearedLines: [], gameOver: true };
+                    }
+                }
             }
         }
         
-        // Clear the completed lines
-        if (completedLines.length > 0) {
-            this.clearLines(completedLines);
+        return clearedLines;
+    }
+    
+    /**
+     * Check for and clear completed lines
+     * @returns {number[]} Array of cleared line indices
+     */
+    clearLines() {
+        const linesToClear = [];
+        
+        // Find completed lines
+        for (let y = this.height - 1; y >= 0; y--) {
+            if (this.isLineComplete(y)) {
+                linesToClear.push(y);
+            }
         }
         
-        return completedLines;
-    }
-    
-    /**
-     * Clear the specified lines and shift blocks down
-     * @param {number[]} lines - Array of line indices to clear
-     */
-    clearLines(lines) {
-        // Sort lines in descending order to avoid shifting problems
-        lines.sort((a, b) => b - a);
+        // Clear lines from bottom to top
+        linesToClear.sort((a, b) => b - a).forEach(y => {
+            this.grid.splice(y, 1);
+            this.grid.unshift(Array(this.width).fill(0));
+        });
         
-        // Remove each completed line
-        for (const line of lines) {
-            // Remove the completed line
-            this.grid.splice(line, 1);
-            // Add a new empty line at the top
-            this.grid.unshift(Array(BOARD_WIDTH).fill(0));
-        }
-        
-        this.dirty = true;
+        return linesToClear;
     }
     
     /**
-     * Check if the position is valid for the given piece
-     * @param {Tetromino} piece - The active tetromino
-     * @param {number} offsetX - X offset from current position
-     * @param {number} offsetY - Y offset from current position
-     * @param {number[][]} [matrix] - Optional alternative matrix
-     * @returns {boolean} True if position is valid, false otherwise
+     * Check if a line is complete
+     * @param {number} y - Y coordinate of line
+     * @returns {boolean} True if line is complete
      */
-    isValidPosition(piece, offsetX = 0, offsetY = 0, matrix = null) {
-        return !CollisionSystem.checkCollision(
-            this.grid, 
-            piece, 
-            offsetX, 
-            offsetY, 
-            matrix
-        );
+    isLineComplete(y) {
+        return this.grid[y].every(cell => cell !== 0);
     }
     
     /**
-     * Move the piece left if possible
-     * @param {Tetromino} piece - The active tetromino
-     * @returns {boolean} True if move was successful
+     * Get the current state of the board
+     * @returns {number[][]} Current grid state
      */
-    moveLeft(piece) {
-        if (this.isValidPosition(piece, -1, 0)) {
-            piece.x--;
-            return true;
-        }
-        return false;
+    getGrid() {
+        return this.grid;
     }
     
     /**
-     * Move the piece right if possible
-     * @param {Tetromino} piece - The active tetromino
-     * @returns {boolean} True if move was successful
-     */
-    moveRight(piece) {
-        if (this.isValidPosition(piece, 1, 0)) {
-            piece.x++;
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Move the piece down if possible
-     * @param {Tetromino} piece - The active tetromino
-     * @returns {boolean} True if move was successful, false if piece should lock
+     * Move a piece down one position
+     * @param {Tetromino} piece - The piece to move
+     * @returns {boolean} True if the move was successful
      */
     moveDown(piece) {
-        if (this.isValidPosition(piece, 0, 1)) {
-            piece.y++;
+        if (!CollisionSystem.checkCollision(this.grid, piece, 0, 1)) {
+            piece.y += 1;
             return true;
         }
         return false;
     }
     
     /**
-     * Perform hard drop of the piece
-     * @param {Tetromino} piece - The active tetromino
-     * @returns {number} Number of cells the piece dropped
+     * Move a piece left one position
+     * @param {Tetromino} piece - The piece to move
+     * @returns {boolean} True if the move was successful
+     */
+    moveLeft(piece) {
+        if (!CollisionSystem.checkCollision(this.grid, piece, -1, 0)) {
+            piece.x -= 1;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Move a piece right one position
+     * @param {Tetromino} piece - The piece to move
+     * @returns {boolean} True if the move was successful
+     */
+    moveRight(piece) {
+        if (!CollisionSystem.checkCollision(this.grid, piece, 1, 0)) {
+            piece.x += 1;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Rotate a piece
+     * @param {Tetromino} piece - The piece to rotate
+     * @returns {boolean} True if the rotation was successful
+     */
+    rotatePiece(piece) {
+        const result = CollisionSystem.checkRotation(this.grid, piece, 1);
+        if (result) {
+            piece.rotate(1, result.matrix);
+            piece.x += result.x;
+            piece.y += result.y;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Hard drop a piece to the bottom
+     * @param {Tetromino} piece - The piece to drop
+     * @returns {number} The distance the piece was dropped
      */
     hardDrop(piece) {
         const dropDistance = CollisionSystem.findDropPosition(this.grid, piece);
@@ -161,38 +203,11 @@ class Board {
     }
     
     /**
-     * Rotate the piece if possible
-     * @param {Tetromino} piece - The active tetromino
-     * @param {number} direction - 1 for clockwise, -1 for counterclockwise
-     * @returns {boolean} True if rotation was successful
-     */
-    rotatePiece(piece, direction = 1) {
-        const rotationResult = CollisionSystem.checkRotation(this.grid, piece, direction);
-        
-        if (rotationResult) {
-            piece.shape = rotationResult.matrix;
-            piece.x += rotationResult.x;
-            piece.y += rotationResult.y;
-            
-            if (rotationResult.rotation !== undefined) {
-                piece.rotation = rotationResult.rotation;
-            } else {
-                piece.rotation = (piece.rotation + direction) % 4;
-                if (piece.rotation < 0) piece.rotation += 4;
-            }
-            
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Calculate drop position for ghost piece
-     * @param {Tetromino} piece - The active tetromino
-     * @returns {number} The Y position where the piece would land
+     * Get the ghost position for a piece (where it would land)
+     * @param {Tetromino} piece - The piece to check
+     * @returns {number} The Y position of the ghost
      */
     getGhostPosition(piece) {
         return piece.y + CollisionSystem.findDropPosition(this.grid, piece);
     }
-} 
+}; 

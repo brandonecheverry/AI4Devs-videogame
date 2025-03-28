@@ -2,101 +2,322 @@
  * Audio system for Tetris
  */
 
-class AudioSystem {
+window.AudioSystem = class AudioSystem {
     /**
      * Create a new audio system
      */
     constructor() {
-        this.sounds = {};
+        this.themes = {};
+        this.music = null;
         this.isMuted = false;
-        this.volume = 0.5;
-        
-        // Load all sounds
-        this.loadSounds();
-    }
-    
-    /**
-     * Load all game sounds
-     */
-    loadSounds() {
-        // Define sounds to load
-        const soundsToLoad = {
-            move: 'move.mp3',
-            rotate: 'rotate.mp3',
-            drop: 'drop.mp3',
-            hardDrop: 'hard_drop.mp3',
-            lineClear: 'line_clear.mp3',
-            tetris: 'tetris.mp3',
-            levelUp: 'level_up.mp3',
-            gameOver: 'game_over.mp3'
+        this.musicEnabled = true;
+        this.musicVolume = 0.5;
+        this.themesLoaded = false;
+        this.currentTheme = 'instrumental'; // Default theme
+
+        // Available theme options
+        this.availableThemes = {
+            'instrumental': 'assets/sounds/theme-tetris-intrumental.mp3',
+            'piano': 'assets/sounds/theme-tetris-piano.mp3',
+            'fun': 'assets/sounds/theme-tetris-fun.mp3'
         };
         
-        // For MVP, we'll create audio elements but not actually load files
-        // This allows the game to work without needing sound assets
-        for (const [name, file] of Object.entries(soundsToLoad)) {
-            this.createEmptyAudio(name);
+        // Load settings from storage
+        this.loadSettings();
+        
+        // Initialize audio context
+        this.initAudioContext();
+        
+        // Load themes
+        this.loadThemes();
+    }
+    
+    /**
+     * Load user audio settings from localStorage
+     */
+    loadSettings() {
+        try {
+            const settings = localStorage.getItem('tetris_audio_settings');
+            if (settings) {
+                const parsed = JSON.parse(settings);
+                this.isMuted = parsed.isMuted || false;
+                this.musicEnabled = parsed.musicEnabled !== undefined ? parsed.musicEnabled : true;
+                this.currentTheme = parsed.currentTheme || 'instrumental';
+                this.musicVolume = parsed.musicVolume || 0.5;
+            }
+        } catch (error) {
+            // Use defaults
         }
     }
     
     /**
-     * Create an empty audio element (placeholder for actual sound files)
-     * @param {string} name - Sound identifier
+     * Save user audio settings to localStorage
      */
-    createEmptyAudio(name) {
-        const audio = new Audio();
-        audio.volume = this.volume;
-        this.sounds[name] = audio;
+    saveSettings() {
+        try {
+            const settings = {
+                isMuted: this.isMuted,
+                musicEnabled: this.musicEnabled,
+                currentTheme: this.currentTheme,
+                musicVolume: this.musicVolume
+            };
+            localStorage.setItem('tetris_audio_settings', JSON.stringify(settings));
+        } catch (error) {
+            // Silently fail
+        }
     }
-    
+
     /**
-     * Play a sound
-     * @param {string} name - Sound identifier
+     * Initialize the audio context
      */
-    play(name) {
-        if (this.isMuted || !this.sounds[name]) return;
-        
-        // Stop sound if already playing
-        const sound = this.sounds[name];
-        sound.currentTime = 0;
-        
-        // Play the sound
-        const playPromise = sound.play();
-        
-        // Handle play promise (may fail if browser blocks autoplay)
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log('Audio play prevented:', error);
-            });
+    initAudioContext() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                this.audioContext = new AudioContext();
+                
+                // Create gain node for volume control
+                this.musicGain = this.audioContext.createGain();
+                this.musicGain.connect(this.audioContext.destination);
+                
+                // Set initial volume
+                this.musicGain.gain.value = this.isMuted ? 0 : this.musicVolume;
+            }
+        } catch (error) {
+            // Continue without audio
+            this.audioContext = null;
         }
     }
     
     /**
-     * Set the volume for all sounds
-     * @param {number} volume - Volume level (0-1)
+     * Load all theme music
      */
-    setVolume(volume) {
-        this.volume = Math.max(0, Math.min(1, volume));
+    loadThemes() {
+        if (!this.audioContext) {
+            return;
+        }
         
-        // Update volume for all sounds
-        for (const sound of Object.values(this.sounds)) {
-            sound.volume = this.volume;
+        // Track loading status
+        let loadedCount = 0;
+        const totalThemes = Object.keys(this.availableThemes).length;
+        
+        // Set a timeout to ensure game doesn't wait forever for themes
+        setTimeout(() => {
+            if (!this.themesLoaded) {
+                this.themesLoaded = true;
+            }
+        }, 5000);
+        
+        // Load theme music
+        for (const [name, path] of Object.entries(this.availableThemes)) {
+            this.loadTheme(name, path)
+                .then(() => {
+                    loadedCount++;
+                    if (loadedCount === totalThemes) {
+                        this.themesLoaded = true;
+                        
+                        // Auto-play music if enabled
+                        if (this.musicEnabled && !this.isMuted) {
+                            this.playMusic();
+                        }
+                    }
+                })
+                .catch(() => {
+                    loadedCount++;
+                    if (loadedCount === totalThemes) {
+                        this.themesLoaded = true;
+                    }
+                });
         }
     }
     
     /**
-     * Mute or unmute all sounds
-     * @param {boolean} muted - Mute state
+     * Load a single theme file
+     * @param {string} name - Theme name
+     * @param {string} path - Path to theme file
+     * @returns {Promise} - Promise that resolves when the theme is loaded
      */
-    setMuted(muted) {
-        this.isMuted = muted;
+    loadTheme(name, path) {
+        return new Promise((resolve, reject) => {
+            fetch(path)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(buffer => this.audioContext.decodeAudioData(buffer))
+                .then(audioBuffer => {
+                    this.themes[name] = audioBuffer;
+                    resolve();
+                })
+                .catch(error => {
+                    reject(error);
+                });
+        });
+    }
+    
+    /**
+     * Play the current theme music
+     */
+    playMusic() {
+        if (!this.audioContext || !this.musicEnabled || this.isMuted) {
+            return;
+        }
+        
+        // Stop currently playing music if any
+        this.stopMusic();
+        
+        const themeBuffer = this.themes[this.currentTheme];
+        if (!themeBuffer) {
+            return;
+        }
+        
+        try {
+            // Create and configure audio source
+            const source = this.audioContext.createBufferSource();
+            source.buffer = themeBuffer;
+            source.loop = true;
+            source.connect(this.musicGain);
+            
+            // Play and store the source
+            source.start(0);
+            this.music = source;
+        } catch (error) {
+            // Silently fail if playback fails
+        }
+    }
+    
+    /**
+     * Set the current theme
+     * @param {string} themeName - The name of the theme to use
+     */
+    setTheme(themeName) {
+        if (this.availableThemes[themeName]) {
+            this.currentTheme = themeName;
+            
+            // Restart music if it's playing
+            if (this.music) {
+                this.playMusic();
+            }
+        }
+    }
+    
+    /**
+     * Toggle music enabled state
+     */
+    toggleMusic() {
+        this.musicEnabled = !this.musicEnabled;
+        
+        if (this.musicEnabled && !this.isMuted) {
+            this.playMusic();
+        } else {
+            this.stopMusic();
+        }
+        
+        this.saveSettings();
+    }
+    
+    /**
+     * Set music enabled state
+     * @param {boolean} enabled - Whether music should be enabled
+     */
+    setMusicEnabled(enabled) {
+        if (this.musicEnabled === enabled) return;
+        
+        this.musicEnabled = enabled;
+        
+        if (this.musicEnabled && !this.isMuted) {
+            this.playMusic();
+        } else {
+            this.stopMusic();
+        }
+        
+        this.saveSettings();
+    }
+    
+    /**
+     * Stop the music
+     */
+    stopMusic() {
+        if (this.music) {
+            try {
+                this.music.stop();
+            } catch (error) {
+                // Ignore errors when stopping
+            }
+            this.music = null;
+        }
     }
     
     /**
      * Toggle mute state
-     * @returns {boolean} New mute state
      */
     toggleMute() {
         this.isMuted = !this.isMuted;
-        return this.isMuted;
+        
+        if (this.musicGain) {
+            this.musicGain.gain.value = this.isMuted ? 0 : this.musicVolume;
+        }
+        
+        if (!this.isMuted && this.musicEnabled && !this.music) {
+            this.playMusic();
+        }
+        
+        this.saveSettings();
     }
-} 
+    
+    /**
+     * Set music volume
+     * @param {number} volume - Volume level (0-1)
+     */
+    setMusicVolume(volume) {
+        this.musicVolume = Math.max(0, Math.min(1, volume));
+        
+        if (this.musicGain && !this.isMuted) {
+            this.musicGain.gain.value = this.musicVolume;
+        }
+        
+        this.saveSettings();
+    }
+    
+    /**
+     * Get available theme options
+     * @returns {Object} - Object with theme names and paths
+     */
+    getAvailableThemes() {
+        return Object.keys(this.availableThemes);
+    }
+    
+    /**
+     * Get current audio settings
+     * @returns {Object} - Current audio settings
+     */
+    getSettings() {
+        return {
+            isMuted: this.isMuted,
+            musicEnabled: this.musicEnabled,
+            currentTheme: this.currentTheme,
+            musicVolume: this.musicVolume
+        };
+    }
+    
+    /**
+     * Clean up audio resources
+     */
+    cleanup() {
+        this.stopMusic();
+        
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.close();
+        }
+    }
+    
+    /**
+     * Dummy play method to maintain API compatibility
+     * @param {string} soundName - Name of the sound to play (ignored)
+     */
+    play(soundName) {
+        // This method is kept for compatibility but does nothing
+    }
+}; 

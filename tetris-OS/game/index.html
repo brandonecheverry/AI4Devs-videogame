@@ -12,6 +12,35 @@
         <div class="title-screen" id="title-screen">
             <h1 class="game-title">TETRIS</h1>
             <div class="start-button" id="start-button">START GAME</div>
+            <div class="options-button" id="options-button">OPTIONS</div>
+        </div>
+        
+        <div class="options-screen hidden" id="options-screen">
+            <div class="options-container">
+                <h2>OPTIONS</h2>
+                
+                <div class="option-item">
+                    <label for="theme-selector">MUSIC THEME</label>
+                    <select id="theme-selector" class="theme-selector">
+                        <option value="instrumental">Tetris Instrumental</option>
+                        <option value="piano">Tetris Piano</option>
+                        <option value="fun">Tetris Fun</option>
+                    </select>
+                </div>
+                
+                <div class="option-item">
+                    <label>BACKGROUND MUSIC</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="music-toggle" class="toggle-checkbox" checked>
+                        <label for="music-toggle" class="toggle-label"></label>
+                    </div>
+                </div>
+                
+                <div class="options-footer">
+                    <div class="options-button" id="save-options-button">SAVE</div>
+                    <div class="options-button secondary" id="cancel-options-button">CANCEL</div>
+                </div>
+            </div>
         </div>
         
         <div class="game-screen hidden" id="game-screen">
@@ -72,6 +101,7 @@
                 <h2>GAME PAUSED</h2>
                 <div class="pause-button" id="resume-button">RESUME</div>
                 <div class="pause-button" id="restart-from-pause-button">RESTART</div>
+                <div class="pause-button" id="options-from-pause-button">OPTIONS</div>
                 <div class="pause-button" id="quit-from-pause-button">QUIT</div>
             </div>
         </div>
@@ -113,23 +143,23 @@
             <div class="mobile-button" id="mobile-right">→</div>
         </div>
         <div class="mobile-control-row">
-            <div class="mobile-button wide-button" id="mobile-drop">DROP</div>
+            <div class="mobile-button wide-button" id="mobile-down">↓</div>
             <div class="mobile-button wide-button" id="mobile-pause">PAUSE</div>
         </div>
     </div>
     
     <!-- Scripts -->
-    <script src="js/constants.js"></script>
-    <script src="js/tetrominos.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/collision.js"></script>
-    <script src="js/board.js"></script>
-    <script src="js/scorer.js"></script>
-    <script src="js/input.js"></script>
-    <script src="js/animation.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/constants.js" defer></script>
+    <script src="js/tetrominos.js" defer></script>
+    <script src="js/renderer.js" defer></script>
+    <script src="js/collision.js" defer></script>
+    <script src="js/board.js" defer></script>
+    <script src="js/scorer.js" defer></script>
+    <script src="js/input.js" defer></script>
+    <script src="js/animation.js" defer></script>
+    <script src="js/audio.js" defer></script>
+    <script src="js/storage.js" defer></script>
+    <script src="js/game.js" defer></script>
+    <script src="js/main.js" defer></script>
 </body>
 </html> 

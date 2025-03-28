@@ -1,12 +1,12 @@
 /**
  * Scoring system for Tetris
  */
-class ScoringSystem {
+window.ScoringSystem = class ScoringSystem {
     /**
      * Create a new scoring system
      * @param {number} startingLevel - Initial level (default: 1)
      */
-    constructor(startingLevel = INITIAL_LEVEL) {
+    constructor(startingLevel = window.TETRIS.INITIAL_LEVEL) {
         this.reset(startingLevel);
     }
     
@@ -14,7 +14,7 @@ class ScoringSystem {
      * Reset the scoring system
      * @param {number} startingLevel - Initial level
      */
-    reset(startingLevel = INITIAL_LEVEL) {
+    reset(startingLevel = window.TETRIS.INITIAL_LEVEL) {
         this.score = 0;
         this.level = startingLevel;
         this.lines = 0;
@@ -26,7 +26,7 @@ class ScoringSystem {
      * @param {number} cells - Number of cells dropped
      */
     addSoftDropPoints(cells) {
-        this.score += cells * SCORE_VALUES.SOFT_DROP;
+        this.score += cells * window.TETRIS.SCORE_VALUES.SOFT_DROP;
         return this.score;
     }
     
@@ -35,7 +35,7 @@ class ScoringSystem {
      * @param {number} cells - Number of cells dropped
      */
     addHardDropPoints(cells) {
-        this.score += cells * SCORE_VALUES.HARD_DROP;
+        this.score += cells * window.TETRIS.SCORE_VALUES.HARD_DROP;
         return this.score;
     }
     
@@ -51,19 +51,19 @@ class ScoringSystem {
         let points = 0;
         switch (lineCount) {
             case 1:
-                points = SCORE_VALUES.SINGLE_LINE;
+                points = window.TETRIS.SCORE_VALUES.SINGLE_LINE;
                 break;
             case 2:
-                points = SCORE_VALUES.DOUBLE_LINE;
+                points = window.TETRIS.SCORE_VALUES.DOUBLE_LINE;
                 break;
             case 3:
-                points = SCORE_VALUES.TRIPLE_LINE;
+                points = window.TETRIS.SCORE_VALUES.TRIPLE_LINE;
                 break;
             case 4:
-                points = SCORE_VALUES.TETRIS;
+                points = window.TETRIS.SCORE_VALUES.TETRIS;
                 break;
             default:
-                points = SCORE_VALUES.SINGLE_LINE * lineCount;
+                points = window.TETRIS.SCORE_VALUES.SINGLE_LINE * lineCount;
         }
         
         // Level multiplier
@@ -92,12 +92,12 @@ class ScoringSystem {
      */
     updateLevel() {
         // Calculate level based on lines cleared
-        const newLevel = 1 + Math.floor(this.lines / LINES_PER_LEVEL);
+        const newLevel = 1 + Math.floor(this.lines / window.TETRIS.LINES_PER_LEVEL);
         
         // Only allow level to increase, not decrease
         if (newLevel > this.level) {
             this.level = newLevel;
-            this.lastLevelLines = Math.floor(this.lines / LINES_PER_LEVEL) * LINES_PER_LEVEL;
+            this.lastLevelLines = Math.floor(this.lines / window.TETRIS.LINES_PER_LEVEL) * window.TETRIS.LINES_PER_LEVEL;
         }
     }
     
@@ -107,7 +107,7 @@ class ScoringSystem {
      */
     getLevelProgress() {
         const linesInCurrentLevel = this.lines - this.lastLevelLines;
-        return linesInCurrentLevel / LINES_PER_LEVEL;
+        return linesInCurrentLevel / window.TETRIS.LINES_PER_LEVEL;
     }
     
     /**
@@ -115,7 +115,7 @@ class ScoringSystem {
      * @returns {number} Drop interval in milliseconds
      */
     getDropInterval() {
-        return getDropInterval(this.level);
+        return window.TETRIS.getDropInterval(this.level);
     }
     
     /**

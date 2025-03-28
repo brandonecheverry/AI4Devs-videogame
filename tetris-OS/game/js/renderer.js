@@ -2,7 +2,7 @@
  * Rendering system for Tetris
  */
 
-class Renderer {
+window.Renderer = class Renderer {
     /**
      * Create a new renderer
      * @param {HTMLCanvasElement} gameCanvas - The main game canvas
@@ -18,11 +18,11 @@ class Renderer {
         this.nextPieceCtx = nextPieceCanvas.getContext('2d');
         
         // Setup
-        this.blockSize = CELL_SIZE;
+        this.blockSize = window.TETRIS.CELL_SIZE;
         
         // Set canvas dimensions based on board size
-        this.gameCanvas.width = BOARD_WIDTH * this.blockSize;
-        this.gameCanvas.height = BOARD_HEIGHT * this.blockSize;
+        this.gameCanvas.width = window.TETRIS.BOARD_WIDTH * this.blockSize;
+        this.gameCanvas.height = window.TETRIS.BOARD_HEIGHT * this.blockSize;
     }
     
     /**
@@ -49,18 +49,18 @@ class Renderer {
         ctx.lineWidth = 0.5;
         
         // Draw vertical lines
-        for (let x = 0; x <= BOARD_WIDTH; x++) {
+        for (let x = 0; x <= window.TETRIS.BOARD_WIDTH; x++) {
             ctx.beginPath();
             ctx.moveTo(x * this.blockSize, 0);
-            ctx.lineTo(x * this.blockSize, BOARD_HEIGHT * this.blockSize);
+            ctx.lineTo(x * this.blockSize, window.TETRIS.BOARD_HEIGHT * this.blockSize);
             ctx.stroke();
         }
         
         // Draw horizontal lines
-        for (let y = 0; y <= BOARD_HEIGHT; y++) {
+        for (let y = 0; y <= window.TETRIS.BOARD_HEIGHT; y++) {
             ctx.beginPath();
             ctx.moveTo(0, y * this.blockSize);
-            ctx.lineTo(BOARD_WIDTH * this.blockSize, y * this.blockSize);
+            ctx.lineTo(window.TETRIS.BOARD_WIDTH * this.blockSize, y * this.blockSize);
             ctx.stroke();
         }
     }
@@ -112,13 +112,13 @@ class Renderer {
      * @param {number[][]} grid - Game board grid
      */
     drawBoard(grid) {
-        for (let y = 0; y < BOARD_HEIGHT; y++) {
-            for (let x = 0; x < BOARD_WIDTH; x++) {
+        for (let y = 0; y < window.TETRIS.BOARD_HEIGHT; y++) {
+            for (let x = 0; x < window.TETRIS.BOARD_WIDTH; x++) {
                 const blockId = grid[y][x];
                 if (blockId !== 0) {
                     // Map the block ID to the tetromino type
                     let tetrominoType;
-                    for (const [type, id] of Object.entries(TETROMINO_IDS)) {
+                    for (const [type, id] of Object.entries(window.TETRIS.TETROMINO_IDS)) {
                         if (id === blockId) {
                             tetrominoType = type;
                             break;
@@ -126,7 +126,7 @@ class Renderer {
                     }
                     
                     if (tetrominoType) {
-                        const color = TETROMINO_COLORS[tetrominoType];
+                        const color = window.TETRIS.TETROMINO_COLORS[tetrominoType];
                         this.drawBlock(this.gameCtx, x, y, color);
                     }
                 }
@@ -171,7 +171,7 @@ class Renderer {
                     const boardY = ghostY + y;
                     
                     // Only draw if within visible board
-                    if (boardY >= 0 && boardY < BOARD_HEIGHT) {
+                    if (boardY >= 0 && boardY < window.TETRIS.BOARD_HEIGHT) {
                         this.drawBlock(this.gameCtx, boardX, boardY, piece.color, 0.3);
                     }
                 }
@@ -186,13 +186,47 @@ class Renderer {
     drawNextPiece(piece) {
         this.clearNextPieceCanvas();
         
-        const matrix = piece.getMatrix();
+        // Create a copy of the piece to avoid changing the original
+        const pieceType = piece.type;
+        
+        // Get appropriate matrix - rotate certain pieces for better display
+        let matrix;
+        if (pieceType === 'I') {
+            // Use horizontally oriented I piece (rotate if needed)
+            matrix = [
+                [0, 0, 0, 0],
+                [1, 1, 1, 1],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ];
+        } else if (pieceType === 'L') {
+            // Use horizontally oriented L piece
+            matrix = [
+                [0, 0, 1],
+                [1, 1, 1],
+                [0, 0, 0]
+            ];
+        } else {
+            matrix = piece.getMatrix();
+        }
+        
         const width = matrix[0].length;
         const height = matrix.length;
         
+        // Fixed size that works for all pieces
+        const previewBlockSize = Math.min(
+            this.nextPieceCanvas.width / 6,
+            this.nextPieceCanvas.height / 6
+        );
+        
         // Center the piece in the preview canvas
-        const offsetX = Math.floor((this.nextPieceCanvas.width / this.blockSize - width) / 2);
-        const offsetY = Math.floor((this.nextPieceCanvas.height / this.blockSize - height) / 2);
+        const offsetX = (this.nextPieceCanvas.width - (width * previewBlockSize)) / 2 / previewBlockSize;
+        const offsetY = (this.nextPieceCanvas.height - (height * previewBlockSize)) / 2 / previewBlockSize;
+        
+        // Save the current block size
+        const originalBlockSize = this.blockSize;
+        // Set the block size for drawing
+        this.blockSize = previewBlockSize;
         
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -201,66 +235,58 @@ class Renderer {
                 }
             }
         }
+        
+        // Restore the original block size
+        this.blockSize = originalBlockSize;
     }
     
     /**
-     * Render the line clear animation
-     * @param {number[]} lines - Array of line indices to animate
+     * Draw the line clear animation
+     * @param {number[]} lines - Array of line indices to clear
      * @param {number} progress - Animation progress (0-1)
      */
     renderLineClearAnimation(lines, progress) {
         const ctx = this.gameCtx;
-        const blockSize = this.blockSize;
         
-        for (const lineY of lines) {
-            // Flash white then fade out
-            if (progress < 0.5) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${1 - progress * 2})`;
-            } else {
-                ctx.fillStyle = `rgba(255, 255, 255, 0)`;
-            }
-            
+        for (const line of lines) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${1 - progress})`;
             ctx.fillRect(
-                0, 
-                lineY * blockSize, 
-                BOARD_WIDTH * blockSize, 
-                blockSize
+                0,
+                line * this.blockSize,
+                window.TETRIS.BOARD_WIDTH * this.blockSize,
+                this.blockSize
             );
         }
     }
     
     /**
-     * Render the level up animation
+     * Draw the level up animation
      * @param {number} level - The new level
      * @param {number} progress - Animation progress (0-1)
      */
     renderLevelUpAnimation(level, progress) {
         const ctx = this.gameCtx;
+        const canvas = this.gameCanvas;
         
-        if (progress < 0.2) {
-            // Flash in
-            ctx.fillStyle = `rgba(255, 255, 255, ${progress * 5})`;
-            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        } else if (progress < 0.8) {
-            // Hold
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        // Flash effect
+        if (progress < 0.5) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${1 - progress * 2})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Level text
+        if (progress > 0.3) {
+            const textAlpha = Math.min((progress - 0.3) * 2, 1);
             
-            // Display level text
             ctx.font = 'bold 40px "Press Start 2P"';
-            ctx.fillStyle = '#000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
             ctx.fillText(
-                `LEVEL ${level}!`, 
-                ctx.canvas.width / 2, 
-                ctx.canvas.height / 2
+                `LEVEL ${level}`,
+                canvas.width / 2,
+                canvas.height / 2
             );
-        } else {
-            // Flash out
-            const alpha = (1 - progress) * 5;
-            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         }
     }
     
