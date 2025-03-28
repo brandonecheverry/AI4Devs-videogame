@@ -7,7 +7,7 @@ let gameActive = false;
 let musicEnabled = true;
 let shields = 100;
 let distance = 0;
-let speed = 10;
+let speed = 50; // Increased from 30 to 50 for much faster initial speed
 let enemiesKilled = 0;
 
 // Three.js variables
@@ -22,10 +22,10 @@ let lastEnemySpawnDistance = 0;
 let spawnRate = 1000; // in meters
 
 // Movement variables
-let moveSpeed = 0.2; // Reduced from 0.4 for slower movement
-let acceleration = 0.08; // Reduced from 0.15 for smoother acceleration
-let deceleration = 0.05; // Reduced from 0.08 for smoother deceleration
-let maxSpeed = 0.6; // Reduced from 1.0 for lower maximum speed
+let moveSpeed = 0.1; // Reduced from 0.2 for slower movement
+let acceleration = 0.04; // Reduced from 0.08 for smoother acceleration
+let deceleration = 0.03; // Reduced from 0.05 for smoother deceleration
+let maxSpeed = 0.4; // Reduced from 0.6 for lower maximum speed
 let currentVelocity = new THREE.Vector3(0, 0, 0); // Current movement velocity
 
 // Add movement state variables at the top with other game state variables
@@ -288,7 +288,7 @@ function cleanupScene() {
         gameActive = false;
         shields = 100;
         distance = 0;
-        speed = 10;
+        speed = 50;
         enemiesKilled = 0;
         lastEnemySpawnDistance = 0;
         spawnRate = 1000;
@@ -619,7 +619,7 @@ function moveSpaceship() {
         currentVelocity.y *= (1 - deceleration);
     }
 
-    // Apply movement
+    // Apply movement with reduced speed
     spaceship.position.x += currentVelocity.x * moveSpeed;
     spaceship.position.y += currentVelocity.y * moveSpeed;
 
@@ -827,11 +827,11 @@ function updateGameObjects(deltaTime) {
     const distanceIncrement = (speed / 10) * 100 * deltaTime;
     distance += distanceIncrement;
     
-    // Increase speed every 3000m
-    if (Math.floor(distance / 3000) > Math.floor((distance - distanceIncrement) / 3000)) {
-        speed += 10;
+    // Increase speed every 1500m (reduced from 2000m for more frequent speed increases)
+    if (Math.floor(distance / 1500) > Math.floor((distance - distanceIncrement) / 1500)) {
+        speed += 8; // Increased from 5 to 8 for faster speed progression
         // Also increase spawn rate
-        spawnRate = Math.max(100, spawnRate - 100);
+        spawnRate = Math.max(100, spawnRate - 40); // Reduced from 50 to 40 for more gradual spawn rate increase
     }
     
     // Update player lasers
@@ -1070,7 +1070,7 @@ function updateTunnel(deltaTime) {
     // Move all tunnel segments forward
     scene.children.forEach(child => {
         if (child.type === 'Group' && child !== spaceship && !enemies.find(e => e.mesh === child)) {
-            child.position.z += speed * deltaTime * 0.1;
+            child.position.z += speed * deltaTime * 0.3; // Increased from 0.2 to 0.3 for faster tunnel movement
             
             // If a segment has passed the player, reset it to the back
             if (child.position.z > 20) {
