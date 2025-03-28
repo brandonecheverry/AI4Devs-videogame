@@ -10,8 +10,8 @@ let distance = 0;
 let speed = 50;
 let enemiesKilled = 0;
 let lastEnemySpawnDistance = 0;
-let spawnRate = 3000; // Increased from 2000 to 3000 for more time between enemies
-let baseSpawnRate = 3000; // Increased from 2000 to 3000 for more time between enemies
+let spawnRate = 3000;
+let baseSpawnRate = 3000;
 
 // Three.js variables
 let scene, camera, renderer;
