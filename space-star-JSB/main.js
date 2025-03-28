@@ -21,6 +21,13 @@ let lastFireTime = 0;
 let lastEnemySpawnDistance = 0;
 let spawnRate = 1000; // in meters
 
+// Movement variables
+let moveSpeed = 0.8; // Increased base movement speed
+let acceleration = 0.2; // Increased acceleration for more responsive movement
+let deceleration = 0.1; // Increased deceleration for smoother stopping
+let maxSpeed = 1.5; // Increased maximum speed
+let currentVelocity = new THREE.Vector3(0, 0, 0); // Current movement velocity
+
 // DOM Elements
 const menuScreen = document.getElementById('menu-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -449,48 +456,48 @@ function handleKeyDown(event) {
 
 // Move the spaceship based on input direction
 function moveSpaceship(direction) {
-    if (!spaceship) return;
-    
-    const moveSpeed = 0.2;
-    const maxX = 3; // Maximum horizontal movement
-    const maxY = 2.5; // Maximum vertical movement
-    
-    switch (direction) {
-        case 'up':
-            if (spaceship.position.y < maxY) {
-                spaceship.position.y += moveSpeed;
-                camera.position.y += moveSpeed * 0.5; // Camera follows with dampening
-            }
-            break;
-        case 'down':
-            if (spaceship.position.y > -maxY) {
-                spaceship.position.y -= moveSpeed;
-                camera.position.y -= moveSpeed * 0.5; // Camera follows with dampening
-            }
-            break;
-        case 'left':
-            if (spaceship.position.x > -maxX) {
-                spaceship.position.x -= moveSpeed;
-                camera.position.x -= moveSpeed * 0.3; // Camera follows with dampening
-            }
-            break;
-        case 'right':
-            if (spaceship.position.x < maxX) {
-                spaceship.position.x += moveSpeed;
-                camera.position.x += moveSpeed * 0.3; // Camera follows with dampening
-            }
-            break;
+    if (!gameActive) return;
+
+    // Calculate target velocity based on input direction
+    const targetVelocity = new THREE.Vector3(0, 0, 0);
+    if (direction.includes('left')) targetVelocity.x = -maxSpeed;
+    if (direction.includes('right')) targetVelocity.x = maxSpeed;
+    if (direction.includes('up')) targetVelocity.y = maxSpeed;
+    if (direction.includes('down')) targetVelocity.y = -maxSpeed;
+
+    // Smoothly interpolate current velocity towards target velocity
+    currentVelocity.x += (targetVelocity.x - currentVelocity.x) * acceleration;
+    currentVelocity.y += (targetVelocity.y - currentVelocity.y) * acceleration;
+
+    // Apply deceleration when no input is given
+    if (!direction.includes('left') && !direction.includes('right')) {
+        currentVelocity.x *= (1 - deceleration);
     }
-    
-    // Update the reticle position to follow spaceship
+    if (!direction.includes('up') && !direction.includes('down')) {
+        currentVelocity.y *= (1 - deceleration);
+    }
+
+    // Apply movement
+    spaceship.position.x += currentVelocity.x * moveSpeed;
+    spaceship.position.y += currentVelocity.y * moveSpeed;
+
+    // Keep the ship within bounds
+    spaceship.position.x = Math.max(-2, Math.min(2, spaceship.position.x));
+    spaceship.position.y = Math.max(-2, Math.min(2, spaceship.position.y));
+
+    // Update camera position to follow the ship smoothly
+    camera.position.x += (spaceship.position.x - camera.position.x) * 0.1;
+    camera.position.y += (spaceship.position.y - camera.position.y) * 0.1;
+
+    // Update reticle position to follow spaceship
     reticle.position.x = spaceship.position.x;
     reticle.position.y = spaceship.position.y;
     reticle.position.z = spaceship.position.z - 5;
-    
+
     // Slight spaceship rotation when moving for visual feedback
-    if (direction === 'left') {
+    if (direction.includes('left')) {
         spaceship.rotation.z = Math.min(spaceship.rotation.z + 0.05, 0.2);
-    } else if (direction === 'right') {
+    } else if (direction.includes('right')) {
         spaceship.rotation.z = Math.max(spaceship.rotation.z - 0.05, -0.2);
     } else {
         // Return to neutral rotation
@@ -500,7 +507,7 @@ function moveSpaceship(direction) {
             spaceship.rotation.z += 0.02;
         }
     }
-    
+
     // Update camera look-at
     camera.lookAt(spaceship.position);
 }
