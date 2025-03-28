@@ -483,32 +483,87 @@ function createSpaceship() {
 function createReticle() {
     reticle = new THREE.Group();
     
-    // Outer circle
-    const outerRingGeometry = new THREE.RingGeometry(0.5, 0.55, 32);
-    const reticleMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xff0000,
+    // Main reticle square
+    const squareGeometry = new THREE.BoxGeometry(2.0, 2.0, 0.01);
+    const squareMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x00ffff,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+        wireframe: true
     });
-    const outerRing = new THREE.Mesh(outerRingGeometry, reticleMaterial);
-    reticle.add(outerRing);
+    const square = new THREE.Mesh(squareGeometry, squareMaterial);
+    reticle.add(square);
     
-    // Inner crosshair
-    const lineVertical = new THREE.Mesh(
-        new THREE.BoxGeometry(0.03, 0.4, 0.01),
-        reticleMaterial
+    // Center dot
+    const dotGeometry = new THREE.CircleGeometry(0.05, 16);
+    const dotMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide
+    });
+    const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+    reticle.add(dot);
+    
+    // Corner indicators
+    const cornerMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide
+    });
+    
+    // Create corner indicators
+    const cornerLength = 0.3;
+    const cornerWidth = 0.02;
+    const cornerDistance = 1.0;
+    
+    // Top left corner
+    const topLeftCorner = new THREE.Group();
+    const topLeftVertical = new THREE.Mesh(
+        new THREE.BoxGeometry(cornerWidth, cornerLength, 0.01),
+        cornerMaterial
     );
-    reticle.add(lineVertical);
-    
-    const lineHorizontal = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.03, 0.01),
-        reticleMaterial
+    const topLeftHorizontal = new THREE.Mesh(
+        new THREE.BoxGeometry(cornerLength, cornerWidth, 0.01),
+        cornerMaterial
     );
-    reticle.add(lineHorizontal);
+    topLeftVertical.position.set(-cornerDistance, cornerDistance - cornerLength/2, 0);
+    topLeftHorizontal.position.set(-cornerDistance + cornerLength/2, cornerDistance, 0);
+    topLeftCorner.add(topLeftVertical);
+    topLeftCorner.add(topLeftHorizontal);
+    reticle.add(topLeftCorner);
     
-    // Position reticle in front of the ship
-    reticle.position.set(0, 0, -5);
+    // Top right corner
+    const topRightCorner = topLeftCorner.clone();
+    topRightCorner.position.x = -topRightCorner.position.x;
+    reticle.add(topRightCorner);
+    
+    // Bottom left corner
+    const bottomLeftCorner = topLeftCorner.clone();
+    bottomLeftCorner.position.y = -bottomLeftCorner.position.y;
+    reticle.add(bottomLeftCorner);
+    
+    // Bottom right corner
+    const bottomRightCorner = bottomLeftCorner.clone();
+    bottomRightCorner.position.x = -bottomRightCorner.position.x;
+    reticle.add(bottomRightCorner);
+    
+    // Position reticle far from the ship
+    reticle.position.set(0, 0, -25);
+    
+    // Add to scene
     scene.add(reticle);
+    
+    // Add animation properties
+    reticle.userData.animation = {
+        pulseScale: 1,
+        pulseSpeed: 2,
+        rotationSpeed: 0.5,
+        time: 0,
+        lockedEnemy: null
+    };
 }
 
 // Update the handleKeyDown function
@@ -575,7 +630,18 @@ function moveSpaceship() {
     // Update reticle position to follow spaceship
     reticle.position.x = spaceship.position.x;
     reticle.position.y = spaceship.position.y;
-    reticle.position.z = spaceship.position.z - 5;
+    reticle.position.z = spaceship.position.z - 25; // Keep reticle far from ship
+
+    // Update reticle animation
+    const animation = reticle.userData.animation;
+    animation.time += 0.016; // Assuming 60fps
+
+    // Pulse animation
+    const pulseScale = 1 + Math.sin(animation.time * animation.pulseSpeed) * 0.1;
+    reticle.scale.set(pulseScale, pulseScale, pulseScale);
+
+    // Rotation animation
+    reticle.rotation.z = Math.sin(animation.time * animation.rotationSpeed) * 0.1;
 
     // Slight spaceship rotation when moving for visual feedback
     if (moveState.left) {
@@ -642,7 +708,7 @@ function checkReticleAlignment() {
         const dy = Math.abs(reticle.position.y - enemy.mesh.position.y);
         
         // Enemy is considered aligned if it's within a small radius of the reticle
-        if (dx < 0.8 && dy < 0.8) {
+        if (dx < 0.5 && dy < 0.5) { // Reduced from 0.8 to 0.5 for more precise targeting
             const distanceToEnemy = enemy.mesh.position.z - spaceship.position.z;
             
             // Only consider enemies in front of the ship
@@ -653,15 +719,34 @@ function checkReticleAlignment() {
         }
     });
     
-    // Change reticle color based on alignment
+    // Update reticle color and locked enemy
     const reticleMaterial = reticle.children[0].material;
+    const animation = reticle.userData.animation;
     
     if (closestEnemy) {
-        // Enemy aligned - change to green
+        // Enemy aligned - change to green and lock onto enemy
         reticleMaterial.color.setHex(0x00ff00);
+        animation.lockedEnemy = closestEnemy;
+        
+        // Immediately snap reticle to enemy position
+        reticle.position.x = closestEnemy.mesh.position.x;
+        reticle.position.y = closestEnemy.mesh.position.y;
+        
+        // Add lock-on effect
+        const pulseScale = 1 + Math.sin(animation.time * 4) * 0.1;
+        reticle.scale.set(pulseScale, pulseScale, pulseScale);
     } else {
-        // No enemy aligned - change to red
+        // No enemy aligned - change to red and reset position
         reticleMaterial.color.setHex(0xff0000);
+        animation.lockedEnemy = null;
+        
+        // Return reticle to ship position
+        reticle.position.x = spaceship.position.x;
+        reticle.position.y = spaceship.position.y;
+        
+        // Normal pulse animation
+        const pulseScale = 1 + Math.sin(animation.time * 2) * 0.1;
+        reticle.scale.set(pulseScale, pulseScale, pulseScale);
     }
 }
 
