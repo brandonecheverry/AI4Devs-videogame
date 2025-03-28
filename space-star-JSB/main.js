@@ -22,10 +22,10 @@ let lastEnemySpawnDistance = 0;
 let spawnRate = 1000; // in meters
 
 // Movement variables
-let moveSpeed = 0.3; // Reduced from 0.8 to 0.3 for slower movement
-let acceleration = 0.1; // Reduced from 0.2 to 0.1 for smoother acceleration
-let deceleration = 0.05; // Reduced from 0.1 to 0.05 for smoother deceleration
-let maxSpeed = 0.8; // Reduced from 1.5 to 0.8 for lower maximum speed
+let moveSpeed = 0.2; // Reduced from 0.4 for slower movement
+let acceleration = 0.08; // Reduced from 0.15 for smoother acceleration
+let deceleration = 0.05; // Reduced from 0.08 for smoother deceleration
+let maxSpeed = 0.6; // Reduced from 1.0 for lower maximum speed
 let currentVelocity = new THREE.Vector3(0, 0, 0); // Current movement velocity
 
 // Add movement state variables at the top with other game state variables
@@ -216,15 +216,8 @@ function setupThreeJS() {
 // Function to start the game
 function startGame() {
     // Clean up any existing scene
-    if (scene) {
-        scene.children.forEach(child => {
-            if (child !== camera) {
-                scene.remove(child);
-            }
-        });
-    }
+    cleanupScene();
     
-    resetGameState();
     hideAllScreens();
     gameScreen.classList.add('active');
     
@@ -246,47 +239,75 @@ function startGame() {
     animate();
 }
 
-// Reset game state variables
-function resetGameState() {
-    // Reset game variables
-    shields = 100;
-    distance = 0;
-    speed = 10;
-    enemiesKilled = 0;
-    lastEnemySpawnDistance = 0;
-    spawnRate = 1000;
-    
-    // Reset movement variables
-    currentVelocity = new THREE.Vector3(0, 0, 0);
-    
-    // Clean up Three.js scene
+// Function to clean up Three.js scene and objects
+function cleanupScene() {
+    if (renderer) {
+        // Remove the renderer from the DOM
+        renderer.domElement.remove();
+        renderer.dispose();
+        renderer = null;
+    }
+
     if (scene) {
-        // Remove all objects except the camera
-        scene.children.forEach(child => {
-            if (child !== camera) {
-                scene.remove(child);
+        // Remove all objects from scene
+        while(scene.children.length > 0) { 
+            const object = scene.children[0];
+            if (object.type === 'Group') {
+                // Remove all children of groups
+                while(object.children.length > 0) {
+                    const child = object.children[0];
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(material => material.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                    object.remove(child);
+                }
             }
-        });
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => material.dispose());
+                } else {
+                    object.material.dispose();
+                }
+            }
+            scene.remove(object);
+        }
         
-        // Reset arrays
+        // Clear arrays
         enemies = [];
         playerLasers = [];
         enemyLasers = [];
         explosions = [];
         
-        // Recreate game objects
-        createStarsBackground();
-        createTunnel();
-        createSpaceship();
-        createReticle();
+        // Reset game state
+        gameActive = false;
+        shields = 100;
+        distance = 0;
+        speed = 10;
+        enemiesKilled = 0;
+        lastEnemySpawnDistance = 0;
+        spawnRate = 1000;
         
-        // Reset camera position
-        camera.position.set(0, 1.5, 5);
-        camera.lookAt(0, 0, 0);
+        // Reset movement state
+        moveState = {
+            up: false,
+            down: false,
+            left: false,
+            right: false
+        };
+        currentVelocity = new THREE.Vector3(0, 0, 0);
+        
+        // Reset camera
+        if (camera) {
+            camera.position.set(0, 1.5, 5);
+            camera.lookAt(0, 0, 0);
+        }
     }
-    
-    // Update HUD
-    updateHUD();
 }
 
 // Create stars for the background (ceiling open to space)
@@ -1095,44 +1116,10 @@ function hideQuitModal() {
     gameActive = true; // Resume the game
 }
 
-// Quit the current game
+// Update the quitGame function
 function quitGame() {
     quitModal.classList.remove('active');
-    
-    // Clean up Three.js scene
-    if (scene) {
-        // Remove all objects except the camera
-        scene.children.forEach(child => {
-            if (child !== camera) {
-                scene.remove(child);
-            }
-        });
-        
-        // Reset arrays
-        enemies = [];
-        playerLasers = [];
-        enemyLasers = [];
-        explosions = [];
-        
-        // Reset game state
-        gameActive = false;
-        shields = 100;
-        distance = 0;
-        speed = 10;
-        enemiesKilled = 0;
-        lastEnemySpawnDistance = 0;
-        spawnRate = 1000;
-        
-        // Reset movement state
-        moveState = {
-            up: false,
-            down: false,
-            left: false,
-            right: false
-        };
-        currentVelocity = new THREE.Vector3(0, 0, 0);
-    }
-    
+    cleanupScene();
     showMenuScreen();
 }
 
