@@ -9,6 +9,8 @@ let shields = 100;
 let distance = 0;
 let speed = 50; // Increased from 30 to 50 for much faster initial speed
 let enemiesKilled = 0;
+let lastEnemySpawnDistance = 0;
+let spawnRate = 2000; // Increased from 1000 to 2000 for slower spawn rate
 
 // Three.js variables
 let scene, camera, renderer;
@@ -18,14 +20,12 @@ let playerLasers = [];
 let enemyLasers = [];
 let clock = new THREE.Clock();
 let lastFireTime = 0;
-let lastEnemySpawnDistance = 0;
-let spawnRate = 1000; // in meters
 
 // Movement variables
-let moveSpeed = 0.1; // Reduced from 0.2 for slower movement
-let acceleration = 0.04; // Reduced from 0.08 for smoother acceleration
-let deceleration = 0.03; // Reduced from 0.05 for smoother deceleration
-let maxSpeed = 0.4; // Reduced from 0.6 for lower maximum speed
+let moveSpeed = 0.15; // Increased from 0.1 for slightly faster movement
+let acceleration = 0.05; // Increased from 0.04 for slightly faster acceleration
+let deceleration = 0.04; // Increased from 0.03 for slightly faster deceleration
+let maxSpeed = 0.5; // Increased from 0.4 for slightly higher maximum speed
 let currentVelocity = new THREE.Vector3(0, 0, 0); // Current movement velocity
 
 // Add movement state variables at the top with other game state variables
@@ -291,7 +291,7 @@ function cleanupScene() {
         speed = 50;
         enemiesKilled = 0;
         lastEnemySpawnDistance = 0;
-        spawnRate = 1000;
+        spawnRate = 2000;
         
         // Reset movement state
         moveState = {
@@ -827,11 +827,11 @@ function updateGameObjects(deltaTime) {
     const distanceIncrement = (speed / 10) * 100 * deltaTime;
     distance += distanceIncrement;
     
-    // Increase speed every 1500m (reduced from 2000m for more frequent speed increases)
+    // Increase speed every 1500m
     if (Math.floor(distance / 1500) > Math.floor((distance - distanceIncrement) / 1500)) {
-        speed += 8; // Increased from 5 to 8 for faster speed progression
-        // Also increase spawn rate
-        spawnRate = Math.max(100, spawnRate - 40); // Reduced from 50 to 40 for more gradual spawn rate increase
+        speed += 8;
+        // Also increase spawn rate more gradually
+        spawnRate = Math.max(500, spawnRate - 20); // Reduced from 40 to 20 for more gradual spawn rate increase
     }
     
     // Update player lasers
@@ -882,7 +882,9 @@ function updateEnemies(deltaTime) {
         
         // Make the enemy fire at the player periodically
         const currentTime = clock.getElapsedTime();
-        if (currentTime - enemy.lastFired > 1) { // Fire every second
+        // Only fire if enemy is in front of the player and enough time has passed
+        if (currentTime - enemy.lastFired > 2 && // Increased from 1 to 2 seconds for slower firing rate
+            enemy.mesh.position.z < spaceship.position.z) { // Only fire if enemy is in front of player
             enemy.lastFired = currentTime;
             enemyFireLaser(enemy);
         }
