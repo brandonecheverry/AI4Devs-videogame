@@ -1,0 +1,4 @@
+Replace this file with actual image assets:
+- stars-bg.jpg (for background)
+- spaceship-texture.jpg (optional for spaceship)
+- tunnel-texture.jpg (optional for tunnel walls) 
