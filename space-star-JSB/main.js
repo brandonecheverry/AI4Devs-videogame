@@ -7,10 +7,11 @@ let gameActive = false;
 let musicEnabled = true;
 let shields = 100;
 let distance = 0;
-let speed = 50; // Increased from 30 to 50 for much faster initial speed
+let speed = 50;
 let enemiesKilled = 0;
 let lastEnemySpawnDistance = 0;
-let spawnRate = 2000; // Increased from 1000 to 2000 for slower spawn rate
+let spawnRate = 3000; // Increased from 2000 to 3000 for more time between enemies
+let baseSpawnRate = 3000; // Increased from 2000 to 3000 for more time between enemies
 
 // Three.js variables
 let scene, camera, renderer;
@@ -291,7 +292,7 @@ function cleanupScene() {
         speed = 50;
         enemiesKilled = 0;
         lastEnemySpawnDistance = 0;
-        spawnRate = 2000;
+        spawnRate = 3000;
         
         // Reset movement state
         moveState = {
@@ -827,11 +828,13 @@ function updateGameObjects(deltaTime) {
     const distanceIncrement = (speed / 10) * 100 * deltaTime;
     distance += distanceIncrement;
     
-    // Increase speed every 1500m
-    if (Math.floor(distance / 1500) > Math.floor((distance - distanceIncrement) / 1500)) {
-        speed += 8;
-        // Also increase spawn rate more gradually
-        spawnRate = Math.max(500, spawnRate - 20); // Reduced from 40 to 20 for more gradual spawn rate increase
+    // Linear speed increase every 2000m (increased from 1500m for more gradual progression)
+    if (Math.floor(distance / 2000) > Math.floor((distance - distanceIncrement) / 2000)) {
+        speed += 3; // Reduced from 5 to 3 for more gradual speed increase
+        
+        // Linear spawn rate decrease
+        const progress = distance / 20000; // Increased from 15000 to 20000 for longer game duration
+        spawnRate = Math.max(1500, baseSpawnRate - (progress * 1500)); // Linear decrease from 3000 to 1500
     }
     
     // Update player lasers
@@ -882,9 +885,13 @@ function updateEnemies(deltaTime) {
         
         // Make the enemy fire at the player periodically
         const currentTime = clock.getElapsedTime();
+        // Linear fire rate based on distance
+        const progress = distance / 20000; // Increased from 15000 to 20000 for longer game duration
+        const fireRate = Math.max(3, 4 - (progress * 1)); // Linear decrease from 4 to 3 seconds (slower firing)
+        
         // Only fire if enemy is in front of the player and enough time has passed
-        if (currentTime - enemy.lastFired > 2 && // Increased from 1 to 2 seconds for slower firing rate
-            enemy.mesh.position.z < spaceship.position.z) { // Only fire if enemy is in front of player
+        if (currentTime - enemy.lastFired > fireRate && 
+            enemy.mesh.position.z < spaceship.position.z) {
             enemy.lastFired = currentTime;
             enemyFireLaser(enemy);
         }
