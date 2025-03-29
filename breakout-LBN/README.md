@@ -2,8 +2,6 @@
 
 Un juego de Breakout clásico desarrollado con HTML, CSS y JavaScript puro para navegadores web.
 
-![Breakout Game Screenshot](screenshot.png)
-
 ## Descripción
 
 Breakout es un juego arcade clásico donde el jugador controla una pala en la parte inferior de la pantalla y debe destruir todos los ladrillos en la parte superior haciendo rebotar una pelota. El juego incluye:
