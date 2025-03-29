@@ -479,6 +479,25 @@ button.btn-nivel.pixel-border::after {
     opacity: 0.15;
 }
 
+/* Puntuación flotante */
+.puntuacion-flotante {
+    position: absolute;
+    font-family: 'Press Start 2P', cursive;
+    color: #ffcc00;
+    font-size: 16px;
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.8);
+    pointer-events: none;
+    z-index: 1000;
+    transition: all 1s ease-out;
+}
+
+/* Puntuación flotante para combos */
+.puntuacion-flotante.combo {
+    color: #ff9800;
+    font-size: 18px;
+    text-shadow: 0 0 6px rgba(255, 152, 0, 0.9);
+}
+
 /* Personalización de elementos específicos */
 canvas.pixel-border {
     image-rendering: pixelated;
