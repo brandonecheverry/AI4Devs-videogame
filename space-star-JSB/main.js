@@ -477,8 +477,8 @@ function createSpaceship() {
             const model = gltf.scene;
             
             // Scale and position adjustments
-            model.scale.set(1, 1, 1); // Increased scale from 0.2 to 1
-            model.rotation.set(0, Math.PI, 0); // Rotate to face forward
+            model.scale.set(1, 1, 1);
+            model.rotation.set(0, Math.PI, 0); // Changed from Math.PI to 0 to rotate 180 degrees
             
             // Enable shadows and enhance materials for all meshes
             model.traverse((node) => {
@@ -860,7 +860,7 @@ function spawnEnemy() {
             
             // Scale and position adjustments
             model.scale.set(1, 1, 1);
-            model.rotation.set(0, Math.PI, 0); // Rotate to face the player
+            model.rotation.set(0, 0, 0); // Changed from Math.PI to 0 to rotate 180 degrees
             
             // Enable shadows and enhance materials for all meshes
             model.traverse((node) => {
