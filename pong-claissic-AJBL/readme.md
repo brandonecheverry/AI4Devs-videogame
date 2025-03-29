@@ -10,7 +10,6 @@ Pong ClAIssic es una recreación del legendario videojuego Pong, con un toque mo
 
 ### Controles
 - **Ratón**: Mueve la paleta izquierda arriba y abajo
-- **Tecla M**: Alterna entre control por ratón y teclado
 - **Tecla P o Espacio**: Pausa el juego
 - **Tecla R**: Reinicia el juego
 

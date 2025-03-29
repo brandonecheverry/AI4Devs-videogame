@@ -100,10 +100,6 @@ class Game {
       if (e.key === 'r') {
         this.restartGame();
       }
-      // Toggle between mouse and keyboard control with 'M' key
-      if (e.key === 'm') {
-        this.mouseControl.enabled = !this.mouseControl.enabled;
-      }
     });
   }
 
