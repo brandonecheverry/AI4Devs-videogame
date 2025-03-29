@@ -164,3 +164,19 @@ when I click dark mode button it does not change text inside this button and sta
 ```
 change dark mode button text to light mode when dark mode is activated
 ```
+
+### Follow-up Request
+
+```
+I need you to implement smooth sliding animation. when number is mob=ving from it's place to destination it must be sliding
+```
+
+### Follow-up Request
+
+```
+in @prompts.md put that our conversation continues in @prompts.md and put relative link
+```
+
+---
+
+**Note**: This conversation continues in [2048-phaser-OSZ/prompts.md](../2048-phaser-OSZ/prompts.md)

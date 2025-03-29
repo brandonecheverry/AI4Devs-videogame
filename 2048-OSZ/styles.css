@@ -148,6 +148,7 @@ button:hover {
   min-height: 0;
   min-width: 0;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
 }
 
 .tile[data-value] {
@@ -204,13 +205,13 @@ button:hover {
 }
 
 .tile.moving {
+  z-index: 2;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
 }
 
 .tile.merged {
+  z-index: 3;
   animation: pop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
 }
 
 .tile.new {
