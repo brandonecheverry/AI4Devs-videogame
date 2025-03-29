@@ -2,9 +2,13 @@
 
 A space combat video game developed using JavaScript, HTML, CSS, and Three.js.
 
+![](./readme-images/menu.png)
+
 ## Game Overview
 
 **Space Star: Last Chance** puts you in control of a spaceship navigating through a 3D endless tunnel. Your mission is to survive as long as possible, avoid obstacles, and destroy enemy ships that appear in your path.
+
+![](./readme-images/gameplay.png)
 
 ## Features
 
