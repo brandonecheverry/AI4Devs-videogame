@@ -28,6 +28,8 @@ La mayoría de los problemas enfrentados han sido referentes a bugs. La mayoría
 
 También encontré algunos problemas en la generación de imágenes de ChatGPT por alta demanda y tuve que esperar o cambiar la forma de realizar los prompts.
 
+A pesar de toda la ayuda de la IA, tener el juego perfecto todavía requiere tiempo y refinado.
+
 ## Prompts
 
 ### Mi prompt inicial
