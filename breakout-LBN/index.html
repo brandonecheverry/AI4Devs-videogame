@@ -13,28 +13,58 @@
             <button id="btn-jugar">JUGAR</button>
         </div>
 
+        <div id="pantalla-seleccion-nivel" class="pantalla oculto">
+            <h2>SELECCIONA NIVEL</h2>
+            <div class="grid-niveles">
+                <!-- Los botones se generarán dinámicamente en JS -->
+            </div>
+            <button id="btn-volver-inicio" class="btn-secundario">VOLVER</button>
+        </div>
+
         <div id="pantalla-juego" class="pantalla oculto">
             <div class="info-juego">
-                <div class="puntuacion">Puntuación: <span id="puntuacion">0</span></div>
-                <div class="nivel">Nivel: <span id="nivel">1</span></div>
-                <div class="vidas">Vidas: <span id="vidas">3</span></div>
+                <div>
+                    <div class="puntuacion">Puntuación: <span id="puntuacion">0</span></div>
+                </div>
+                <div>
+                    <div class="nivel">Nivel: <span id="nivel">1</span></div>
+                </div>
+                <div>
+                    <div class="vidas">Vidas: <span id="vidas">3</span></div>
+                </div>
+                <div>
+                    <div class="tipo-ladrillo">Tipo: <span id="tipo-ladrillo">Normal</span></div>
+                </div>
+                <div>
+                    <button id="btn-salir" class="btn-salir">SALIR</button>
+                </div>
             </div>
             <canvas id="juego" width="800" height="600"></canvas>
+            <div id="pausa-overlay" class="oculto">
+                <div class="pausa-contenido">
+                    <h2>JUEGO EN PAUSA</h2>
+                    <p>Presiona 'P' o haz clic para continuar</p>
+                </div>
+            </div>
         </div>
 
         <div id="pantalla-game-over" class="pantalla oculto">
             <h1>GAME OVER</h1>
             <p>Puntuación final: <span id="puntuacion-final">0</span></p>
             <button id="btn-reiniciar-go">JUGAR DE NUEVO</button>
+            <button id="btn-menu-niveles-go" class="btn-secundario">SELECCIONAR NIVEL</button>
         </div>
 
         <div id="pantalla-victoria" class="pantalla oculto">
             <h1>¡VICTORIA!</h1>
             <p>Puntuación final: <span id="puntuacion-victoria">0</span></p>
-            <button id="btn-reiniciar-v">JUGAR DE NUEVO</button>
+            <button id="btn-siguiente-nivel">SIGUIENTE NIVEL</button>
+            <button id="btn-reiniciar-v" class="btn-secundario">JUGAR DE NUEVO</button>
+            <button id="btn-menu-niveles-v" class="btn-secundario">SELECCIONAR NIVEL</button>
         </div>
     </div>
 
+    <script src="js/niveles.js"></script>
     <script src="js/juego.js"></script>
 </body>
 </html> 
