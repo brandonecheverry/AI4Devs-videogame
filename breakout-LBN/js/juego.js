@@ -302,6 +302,13 @@ function detectarColisionPared() {
 }
 
 function detectarColisionPala() {
+    // Si la pelota ha caído por debajo del canvas
+    if (pelota.y > canvas.height + pelota.radio) {
+        perderVida();
+        return; // Salir de la función para evitar más comprobaciones
+    }
+    
+    // Verificar si la pelota está a la altura de la pala
     if (pelota.y + pelota.velocidadY > canvas.height - pelota.radio - pala.alto &&
         pelota.y + pelota.velocidadY < canvas.height - pelota.radio) {
         if (pelota.x > pala.x && pelota.x < pala.x + pala.ancho) {
@@ -326,9 +333,6 @@ function detectarColisionPala() {
             
             // Evitar que la pelota quede atrapada en la pala
             pelota.y = canvas.height - pelota.radio - pala.alto - 1;
-        } else if (pelota.y + pelota.velocidadY > canvas.height - pelota.radio) {
-            // La pelota cae fuera de la pala
-            perderVida();
         }
     }
 }
@@ -537,22 +541,41 @@ function verificarVictoria() {
 
 function perderVida() {
     vidas--;
+    vidasElement.textContent = vidas;
+    
     if (vidas <= 0) {
         mostrarPantalla('gameOver');
         puntuacionFinalElement.textContent = puntuacion;
         reproducirSonido('derrota');
         detenerJuego();
     } else {
-        reiniciarPosiciones();
-        reproducirSonido('perderVida');
+        // Pausar momentáneamente
+        cancelAnimationFrame(animacionId);
+        
+        // Reiniciar posiciones con un pequeño retraso para darle tiempo al jugador
+        setTimeout(() => {
+            reiniciarPosiciones();
+            reproducirSonido('perderVida');
+            
+            // Sólo reiniciar el juego si todavía está en curso
+            if (juegoEnCurso && !juegoEnPausa) {
+                animacionId = requestAnimationFrame(actualizarJuego);
+            }
+        }, 1000);
     }
 }
 
 function reiniciarPosiciones() {
+    // Asegurar que la pelota esté en una posición inicial correcta
     pelota.x = canvas.width / 2;
     pelota.y = canvas.height - 30;
-    pelota.velocidadX = (Math.random() * 2 - 1) * configuracion.velocidadInicial;
-    pelota.velocidadY = -configuracion.velocidadInicial;
+    
+    // Dar una dirección aleatoria pero controlada
+    const anguloInicial = Math.PI * (0.3 + Math.random() * 0.4); // Entre 54 y 126 grados
+    pelota.velocidadX = configuracion.velocidadInicial * Math.cos(anguloInicial) * (Math.random() > 0.5 ? 1 : -1);
+    pelota.velocidadY = -configuracion.velocidadInicial * Math.sin(anguloInicial);
+    
+    // Reposicionar pala en el centro
     pala.x = (canvas.width - pala.ancho) / 2;
 }
 
@@ -633,6 +656,12 @@ function actualizarJuego() {
     
     if (tipoLadrilloActual === 'movil') {
         moverLadrillosMoviles();
+    }
+    
+    // Verificar si la pelota cayó fuera del canvas
+    if (pelota.y > canvas.height) {
+        perderVida();
+        return;
     }
     
     // Detectar colisiones

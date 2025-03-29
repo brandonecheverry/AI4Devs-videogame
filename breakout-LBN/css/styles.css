@@ -53,14 +53,9 @@ h2 {
 }
 
 button {
-<<<<<<< HEAD
     padding: 1rem 1.5rem;
     font-size: 1rem;
     font-family: 'Press Start 2P', cursive;
-=======
-    padding: 1rem 2rem;
-    font-size: 1.5rem;
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
     background-color: #4CAF50;
     color: white;
     border: none;
@@ -69,11 +64,8 @@ button {
     transition: all 0.3s ease;
     margin: 0.5rem;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-<<<<<<< HEAD
     text-transform: uppercase;
     letter-spacing: 1px;
-=======
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
 }
 
 button:hover {
@@ -89,7 +81,6 @@ button:active {
 
 #btn-jugar {
     background-color: #2196F3;
-<<<<<<< HEAD
     font-size: 1.2rem;
     padding: 1.2rem 1.8rem;
     margin-top: 1.5rem;
@@ -118,10 +109,6 @@ button:active {
     100% {
         left: 150%;
     }
-=======
-    font-size: 1.8rem;
-    padding: 1.2rem 2.5rem;
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
 }
 
 #btn-jugar:hover {
@@ -150,6 +137,17 @@ button:active {
     justify-content: center;
     align-items: center;
     font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+    position: relative;
+}
+
+.btn-nivel.pixel-border {
+    border: 2px solid white;
+    box-shadow: none;
+}
+
+.btn-nivel.pixel-border::after {
+    display: none;
 }
 
 .nivel-completado {
@@ -340,10 +338,7 @@ p {
     height: auto;
     border-radius: 5px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-<<<<<<< HEAD
     image-rendering: pixelated;
-=======
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
 }
 
 .ladrillo {
@@ -399,19 +394,12 @@ p {
 }
 
 #pantalla-inicio h1 {
-<<<<<<< HEAD
     font-size: 2.5rem;
-=======
-    font-size: 3.5rem;
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
     margin-bottom: 2rem;
     color: #FFD700;
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
     animation: pulsar 2s infinite;
-<<<<<<< HEAD
     letter-spacing: 3px;
-=======
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
 }
 
 @keyframes pulsar {
@@ -421,7 +409,6 @@ p {
     50% {
         transform: scale(1.05);
     }
-<<<<<<< HEAD
 }
 
 /* Efectos retro adicionales */
@@ -444,6 +431,11 @@ p {
     z-index: -1;
 }
 
+/* Excepción para los botones de nivel */
+button.btn-nivel.pixel-border::after {
+    display: none;
+}
+
 .scanlines {
     position: fixed;
     top: 0;
@@ -464,6 +456,4 @@ p {
 /* Personalización de elementos específicos */
 canvas.pixel-border {
     image-rendering: pixelated;
-=======
->>>>>>> 478f62a69f986db39a29bcb6de9b7961d2461914
 } 
