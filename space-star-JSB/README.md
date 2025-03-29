@@ -35,7 +35,7 @@ Run in your terminal:
 python3 server.py
 ````
 
-Head to `http://localhost:8000` in your web browser.
+Head to `http://localhost:9020` in your web browser.
 
 ## How to Play
 
