@@ -15,6 +15,7 @@ A space combat video game developed using JavaScript, HTML, CSS, and Three.js.
 - Scoring system based on distance traveled
 - Persistent leaderboard
 - Damage and shield system
+- Progressive difficulty
 - Visual effects for explosions and damage
 - Game audio including music and sound effects
 

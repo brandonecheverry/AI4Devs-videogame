@@ -778,16 +778,17 @@ function spawnEnemy() {
     enemyGroup.add(wings);
     
     // Position the enemy at a random position in the tunnel
-    const x = (Math.random() - 0.5) * 6; // Random X position
-    const y = (Math.random() - 0.5) * 5; // Random Y position
+    // Reduced spawn area to prevent wall collisions
+    const x = (Math.random() - 0.5) * 4; // Reduced from 6 to 4 for safer spawn area
+    const y = (Math.random() - 0.5) * 3; // Reduced from 5 to 3 for safer spawn area
     enemyGroup.position.set(x, y, -50); // Start far away
     
     scene.add(enemyGroup);
     
-    // Add to enemies array
+    // Add to enemies array with slightly randomized speed
     enemies.push({
         mesh: enemyGroup,
-        velocity: new THREE.Vector3(0, 0, 0.2 + Math.random() * 0.1), // Moving toward player
+        velocity: new THREE.Vector3(0, 0, 0.2 + Math.random() * 0.05), // Reduced speed variation
         lastFired: 0
     });
 }
@@ -880,14 +881,23 @@ function updateEnemies(deltaTime) {
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
         
-        // Move enemy toward player
-        enemy.mesh.position.add(enemy.velocity.clone().multiplyScalar(deltaTime * 60));
+        // Calculate new position
+        const newPosition = enemy.mesh.position.clone();
+        newPosition.add(enemy.velocity.clone().multiplyScalar(deltaTime * 60));
+        
+        // Check boundaries before applying movement
+        // Keep enemies within the playable area
+        newPosition.x = Math.max(-2, Math.min(2, newPosition.x)); // Reduced from -3/3 to -2/2
+        newPosition.y = Math.max(-2, Math.min(2, newPosition.y)); // Reduced from -3/3 to -2/2
+        
+        // Apply the constrained position
+        enemy.mesh.position.copy(newPosition);
         
         // Make the enemy fire at the player periodically
         const currentTime = clock.getElapsedTime();
         // Linear fire rate based on distance
-        const progress = distance / 20000; // Increased from 15000 to 20000 for longer game duration
-        const fireRate = Math.max(3, 4 - (progress * 1)); // Linear decrease from 4 to 3 seconds (slower firing)
+        const progress = distance / 20000;
+        const fireRate = Math.max(3, 4 - (progress * 1));
         
         // Only fire if enemy is in front of the player and enough time has passed
         if (currentTime - enemy.lastFired > fireRate && 
