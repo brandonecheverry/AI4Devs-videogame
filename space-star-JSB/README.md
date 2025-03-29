@@ -18,6 +18,20 @@ A space combat video game developed using JavaScript, HTML, CSS, and Three.js.
 - Visual effects for explosions and damage
 - Game audio including music and sound effects
 
+## Requirements
+
+You need python3 installed on your system to run the game server.
+
+## Start the game
+
+Run in your terminal:
+
+```bash
+python3 server.py
+````
+
+Head to `http://localhost:8000` in your web browser.
+
 ## How to Play
 
 1. Open `index.html` in a modern web browser
