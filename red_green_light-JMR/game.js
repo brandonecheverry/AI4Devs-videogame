@@ -37,6 +37,8 @@ let gameState = 'waiting'; // 'waiting', 'moving', 'paused', 'balancing', 'finis
 let playerSpeed = 0;
 let maxSpeed = 300;
 let acceleration = 5;
+let deceleration = 3; // Nueva variable para la desaceleración
+let minSpeedThreshold = 5; // Umbral mínimo de velocidad para considerarse "detenido"
 let lightTimer;
 
 // Variables para el minijuego de equilibrio
@@ -88,7 +90,17 @@ function create() {
     trafficLight = this.add.circle(400, 50, 30, 0x00ff00);
     
     // Texto de instrucciones
-    this.add.text(400, 550, 'Mantén presionado ESPACIO para moverte', {
+    this.add.text(400, 520, 'Mantén presionado ESPACIO para acelerar', {
+        fontSize: '18px',
+        fill: '#fff'
+    }).setOrigin(0.5);
+    
+    this.add.text(400, 550, 'Suelta ESPACIO para frenar gradualmente', {
+        fontSize: '18px',
+        fill: '#fff'
+    }).setOrigin(0.5);
+    
+    this.add.text(400, 580, 'Debes detenerte cuando el semáforo está ROJO', {
         fontSize: '18px',
         fill: '#fff'
     }).setOrigin(0.5);
@@ -298,7 +310,7 @@ function killPlayer() {
 // Actualizar el juego
 function update() {
     // Actualizar texto de depuración
-    this.debugText.setText(`Debug: Estado: ${gameState}, Moviendo: ${isMoving}, Velocidad: ${playerSpeed}, PosX: ${player.x}`);
+    this.debugText.setText(`Debug: Estado: ${gameState}, Moviendo: ${isMoving}, Velocidad: ${playerSpeed.toFixed(1)}, PosX: ${player.x.toFixed(1)}`);
     
     // Control de movimiento con barra espaciadora
     if (spaceBar.isDown && (gameState === 'waiting' || gameState === 'paused' || gameState === 'moving')) {
@@ -309,23 +321,37 @@ function update() {
         
         isMoving = true;
         
-        // Aumentar velocidad mientras se mantiene pulsado
+        // Aumentar velocidad mientras se mantiene pulsado (aceleración)
         if (playerSpeed < maxSpeed) {
             playerSpeed += acceleration;
+            if (playerSpeed > maxSpeed) playerSpeed = maxSpeed;
         }
         
         // Mover al jugador hacia la derecha
         player.setVelocityX(playerSpeed);
-        console.log("Velocidad: " + playerSpeed);
+        console.log("Velocidad: " + playerSpeed.toFixed(1));
     } 
-    else if (spaceBar.isUp && gameState === 'moving') {
-        isMoving = false;
-        player.setVelocity(0);
-        console.log("Deteniendo jugador");
-        
-        // Sin minijuego, solo cambiamos al estado 'paused'
-        gameState = 'paused';
-        playerSpeed = 0;
+    else if (gameState === 'moving') {
+        // Si la barra espaciadora se suelta pero el jugador sigue en movimiento
+        // Aplicamos desaceleración gradual (inercia)
+        if (playerSpeed > 0) {
+            playerSpeed -= deceleration;
+            
+            // Si la velocidad es muy baja, consideramos que el jugador está detenido
+            if (playerSpeed <= minSpeedThreshold) {
+                playerSpeed = 0;
+                isMoving = false;
+                player.setVelocity(0);
+                console.log("Deteniendo jugador");
+                
+                // Sin minijuego, solo cambiamos al estado 'paused'
+                gameState = 'paused';
+            } else {
+                // Seguimos moviendo el jugador pero más lento
+                player.setVelocityX(playerSpeed);
+                console.log("Frenando: " + playerSpeed.toFixed(1));
+            }
+        }
     }
     
     // Detectar movimiento durante luz roja

@@ -2031,6 +2031,113 @@ Este enfoque es más robusto y utiliza correctamente la API de Phaser para los g
 
 ---
 
+_**User**_
+
+Perfecto, Ahora quiero que implementes la Inercia del Jugador que acelere de a poco y frene de a poco.
+
+---
+
+_**Assistant**_
+
+<think>Para implementar la inercia del jugador en el juego "Luz Roja, Luz Verde", necesito hacer que el jugador acelere gradualmente y frene gradualmente, lo que proporcionará un movimiento más natural y realista.
+
+La clave para esta implementación es:
+1. Acelerar gradualmente cuando se pulsa la barra espaciadora
+2. Desacelerar gradualmente cuando se suelta la barra espaciadora, en lugar de detenerse abruptamente
+
+El código actual ya tiene una aceleración gradual cuando se mantiene pulsada la barra espaciadora, pero no tiene una desaceleración gradual al soltarla. Voy a modificar principalmente la función `update()` para implementar esta inercia.
+
+Aquí está mi plan:
+1. Añadir una variable para la desaceleración (similar a la aceleración)
+2. Modificar la lógica de movimiento para aplicar desaceleración gradual
+3. Asegurarme de que la inercia se detenga adecuadamente cuando el jugador esté completamente parado
+4. Mantener la detección de colisiones y otros comportamientos existentes</think>Voy a implementar la inercia para que el jugador acelere y frene gradualmente, haciendo el movimiento más natural y realista.
+
+---
+
+```diff
+  let maxSpeed = 300;
+  let acceleration = 5;
++ let deceleration = 3; // Nueva variable para la desaceleración
++ let minSpeedThreshold = 5; // Umbral mínimo de velocidad para considerarse "detenido"
+  let lightTimer;
+  
+  function update() {
+      // Actualizar texto de depuración
+-     this.debugText.setText(`Debug: Estado: ${gameState}, Moviendo: ${isMoving}, Velocidad: ${playerSpeed}, PosX: ${player.x}`);
++     this.debugText.setText(`Debug: Estado: ${gameState}, Moviendo: ${isMoving}, Velocidad: ${playerSpeed.toFixed(1)}, PosX: ${player.x.toFixed(1)}`);
+      
+      // Control de movimiento con barra espaciadora
+          isMoving = true;
+          
+-         // Aumentar velocidad mientras se mantiene pulsado
++         // Aumentar velocidad mientras se mantiene pulsado (aceleración)
+          if (playerSpeed < maxSpeed) {
+              playerSpeed += acceleration;
++             if (playerSpeed > maxSpeed) playerSpeed = maxSpeed;
+          }
+          
+          // Mover al jugador hacia la derecha
+          player.setVelocityX(playerSpeed);
+-         console.log("Velocidad: " + playerSpeed);
++         console.log("Velocidad: " + playerSpeed.toFixed(1));
+      } 
+-     else if (spaceBar.isUp && gameState === 'moving') {
++     else if (gameState === 'moving') {
++         // Si la barra espaciadora se suelta pero el jugador sigue en movimiento
++         // Aplicamos desaceleración gradual (inercia)
++         if (playerSpeed > 0) {
++             playerSpeed -= deceleration;
++             
++             // Si la velocidad es muy baja, consideramos que el jugador está detenido
++             if (playerSpeed <= minSpeedThreshold) {
++                 playerSpeed = 0;
+                  isMoving = false;
+                  player.setVelocity(0);
+                  // Sin minijuego, solo cambiamos al estado 'paused'
+                  gameState = 'paused';
+-         playerSpeed = 0;
++             } else {
++                 // Seguimos moviendo el jugador pero más lento
++                 player.setVelocityX(playerSpeed);
++                 console.log("Frenando: " + playerSpeed.toFixed(1));
++             }
++         }
+      }
+      
+```
+
+---
+
+Ahora mejoremos también el texto de instrucciones para el jugador:
+
+---
+
+```diff
+      
+      // Texto de instrucciones
+-     this.add.text(400, 550, 'Mantén presionado ESPACIO para moverte', {
++     this.add.text(400, 520, 'Mantén presionado ESPACIO para acelerar', {
++         fontSize: '18px',
++         fill: '#fff'
++     }).setOrigin(0.5);
++     
++     this.add.text(400, 550, 'Suelta ESPACIO para frenar gradualmente', {
++         fontSize: '18px',
++         fill: '#fff'
++     }).setOrigin(0.5);
++     
++     this.add.text(400, 580, 'Debes detenerte cuando el semáforo está ROJO', {
+          fontSize: '18px',
+          fill: '#fff'
+```
+
+---
+
+
+
+---
+
 
 
 ---

@@ -10,10 +10,11 @@ En este juego, controlas a un personaje (representado como una pelotita) que deb
 
 1. **Objetivo**: Llegar a la meta (línea roja a la derecha) sin ser eliminado.
 2. **Controles**:
-   - Mantén presionada la tecla **ESPACIO** para moverte hacia adelante.
-   - Suelta la tecla **ESPACIO** para detenerte.
+   - Mantén presionada la tecla **ESPACIO** para acelerar gradualmente.
+   - Suelta la tecla **ESPACIO** para frenar de forma gradual (inercia).
 
 3. **Mecánicas**:
+   - **Inercia**: El personaje acelera y frena gradualmente, simulando la física del movimiento real.
    - **Semáforo**: Un círculo en la parte superior de la pantalla indica si puedes moverte (verde) o debes detenerte (rojo).
    - **Eliminación**: Serás eliminado si te mueves cuando la luz está roja.
 
@@ -23,6 +24,7 @@ En este juego, controlas a un personaje (representado como una pelotita) que deb
 
 - Escenario básico con línea de inicio (izquierda) y meta (derecha)
 - Personaje controlable con la barra espaciadora
+- Sistema de inercia con aceleración y frenado gradual
 - Sistema de semáforo con luz roja/verde
 - Detección de movimiento durante luz roja
 - Efectos visuales para ganar y perder
