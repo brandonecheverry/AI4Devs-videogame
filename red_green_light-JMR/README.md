@@ -16,6 +16,8 @@ En este juego, controlas a un personaje (representado como una pelotita) que deb
 3. **Mecánicas**:
    - **Inercia**: El personaje acelera y frena gradualmente, simulando la física del movimiento real.
    - **Semáforo**: Un círculo en la parte superior de la pantalla indica si puedes moverte (verde) o debes detenerte (rojo).
+   - **Audio**: La música suena cuando la luz está verde y se detiene cuando cambia a roja.
+   - **Trampa de tiempo**: La luz cambia a roja 0.2 segundos después de que la música se detiene.
    - **Eliminación**: Serás eliminado si te mueves cuando la luz está roja.
 
 4. **Reinicio**: Presiona la tecla **R** para reiniciar el juego después de ganar o ser eliminado.
@@ -26,12 +28,14 @@ En este juego, controlas a un personaje (representado como una pelotita) que deb
 - Personaje controlable con la barra espaciadora
 - Sistema de inercia con aceleración y frenado gradual
 - Sistema de semáforo con luz roja/verde
+- Música que indica cuando puedes moverte
+- Trampa de tiempo entre la música y el cambio visual
 - Detección de movimiento durante luz roja
 - Efectos visuales para ganar y perder
 - Sistema de reinicio
 
 ## Características pendientes
-- Implementación de sonido para mejorar la experiencia
+- Implementación de sonidos adicionales
 - Minijuego de equilibrio al detenerse
 - Bots con IA básica
 
