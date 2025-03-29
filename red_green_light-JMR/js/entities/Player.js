@@ -17,8 +17,7 @@ class Player {
         
         // Configuración del jugador
         this.config = {
-            color: 0x3498db,
-            radius: 15,
+            radius: 15, // Mantenemos para cálculos de colisión
             maxSpeed: 300,
             acceleration: 5,
             deceleration: 3,
@@ -39,36 +38,49 @@ class Player {
      * Crea el jugador en la escena
      */
     create() {
-        // Crear el gráfico para representar al jugador
-        this.graphics = this.scene.add.graphics();
-        this.updateGraphics();
+        // Crear el sprite del jugador
+        this.sprite = this.scene.physics.add.sprite(this.x, this.y, 'penguin_walk1');
         
-        // Crear el cuerpo físico del jugador
-        this.sprite = this.scene.physics.add.sprite(this.x, this.y, '');
-        this.sprite.setCircle(this.config.radius);
-        this.sprite.setDisplaySize(this.config.radius * 2, this.config.radius * 2);
-        this.sprite.setVisible(false); // El sprite es invisible, usamos el gráfico
+        // Configurar el tamaño y la física
+        this.sprite.setDisplaySize(40, 40); // Ajustar según el tamaño del sprite
+        this.sprite.setBodySize(30, 30);    // Ajustar la hitbox para colisiones
         this.sprite.setCollideWorldBounds(true);
         this.sprite.setBounce(0);
         
-        // Vinculamos el gráfico con el sprite para acceso más fácil
-        this.sprite.playerGraphic = this.graphics;
+        // Actualizar la animación inicial
+        this.updateAnimation();
     }
     
     /**
-     * Actualiza el gráfico del jugador
-     * @param {number} color - Color opcional para dibujar el jugador 
+     * Actualiza la animación del jugador según su estado
      */
-    updateGraphics(color = null) {
-        const drawColor = color || this.config.color;
-        
-        this.graphics.clear();
-        this.graphics.fillStyle(drawColor, 1);
-        this.graphics.fillCircle(
-            this.sprite ? this.sprite.x : this.x, 
-            this.sprite ? this.sprite.y : this.y, 
-            this.config.radius
-        );
+    updateAnimation() {
+        switch (this.state) {
+            case 'waiting':
+                this.sprite.setTexture('penguin_walk1');
+                this.sprite.anims.stop();
+                break;
+            case 'moving':
+                if (!this.sprite.anims.isPlaying || this.sprite.anims.currentAnim?.key !== 'walk') {
+                    this.sprite.play('walk');
+                }
+                break;
+            case 'paused':
+                // Mostrar al pingüino estático en lugar de deslizándose
+                this.sprite.setTexture('penguin_walk1');
+                this.sprite.anims.stop();
+                break;
+            case 'finished':
+                this.sprite.setTexture('penguin_walk1');
+                this.sprite.anims.stop();
+                // Podríamos añadir una animación de victoria si tuviéramos
+                break;
+            case 'dead':
+                // La animación de muerte se maneja en el método kill()
+                break;
+            default:
+                break;
+        }
     }
     
     /**
@@ -93,8 +105,8 @@ class Player {
         // Mover al jugador hacia la derecha
         this.sprite.setVelocityX(this.speed);
         
-        // Actualizar gráfico
-        this.updateGraphics();
+        // Actualizar animación
+        this.updateAnimation();
     }
     
     /**
@@ -114,7 +126,7 @@ class Player {
         } else {
             // Seguir moviendo pero más lento
             this.sprite.setVelocityX(this.speed);
-            this.updateGraphics();
+            this.updateAnimation();
             return false;
         }
     }
@@ -127,7 +139,7 @@ class Player {
         this.isMoving = false;
         this.state = 'paused';
         this.sprite.setVelocity(0);
-        this.updateGraphics();
+        this.updateAnimation();
     }
     
     /**
@@ -138,20 +150,18 @@ class Player {
         
         this.state = 'dead';
         
+        // Reproducir la animación de muerte
+        this.sprite.play('die');
+        
         // Efecto visual de muerte
         this.scene.tweens.add({
             targets: this.sprite,
-            scale: 1.5,
-            alpha: 0,
             y: this.sprite.y + 30,
             duration: 800,
             ease: 'Power2',
             onComplete: () => {
                 // Mancha de sangre donde murió el jugador
                 this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0xff0000);
-                
-                // Limpiar el gráfico del jugador
-                this.graphics.clear();
                 
                 // Mensaje de game over
                 this.scene.add.text(400, 300, '¡ELIMINADO!', {
@@ -179,8 +189,9 @@ class Player {
         this.state = 'finished';
         this.sprite.setVelocity(0);
         
-        // Cambiar color del jugador a verde al ganar
-        this.updateGraphics(0x00ff00);
+        // Establecer animación de victoria (usar el primer frame de caminar)
+        this.sprite.setTexture('penguin_walk1');
+        this.sprite.setTint(0x00ff00); // Tinte verde para indicar victoria
         
         // Mensaje de victoria
         this.scene.add.text(400, 300, '¡META ALCANZADA!', {
@@ -210,9 +221,9 @@ class Player {
      * Actualiza el jugador en cada frame
      */
     update() {
-        // Solo actualizar el gráfico si el jugador está vivo
+        // Solo actualizar la animación si el jugador está vivo
         if (this.state !== 'dead') {
-            this.updateGraphics();
+            this.updateAnimation();
         }
     }
     

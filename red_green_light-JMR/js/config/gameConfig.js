@@ -13,12 +13,15 @@ export const GAME_CONFIG = {
 
 // Configuración del jugador
 export const PLAYER_CONFIG = {
-    color: 0x3498db,
     radius: 15,
     maxSpeed: 300,
     acceleration: 5,
     deceleration: 3,
     minSpeedThreshold: 5,
+    spriteSize: {
+        width: 40,
+        height: 40
+    },
     initialPosition: {
         x: 120,
         y: 300

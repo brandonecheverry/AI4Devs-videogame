@@ -21,12 +21,31 @@ class GameScene extends Phaser.Scene {
     preload() {
         // Cargar el archivo de audio para la luz verde
         this.load.audio('greenLight', 'assets/audio/greenLight.mp3');
+        
+        // Cargar sprites del pingüino
+        this.load.image('penguin_walk1', 'assets/sprites/penguin_walk01.png');
+        this.load.image('penguin_walk2', 'assets/sprites/penguin_walk02.png');
+        this.load.image('penguin_walk3', 'assets/sprites/penguin_walk03.png');
+        this.load.image('penguin_walk4', 'assets/sprites/penguin_walk04.png');
+        
+        this.load.image('penguin_slide1', 'assets/sprites/penguin_slide01.png');
+        this.load.image('penguin_slide2', 'assets/sprites/penguin_slide02.png');
+        
+        this.load.image('penguin_die1', 'assets/sprites/penguin_die01.png');
+        this.load.image('penguin_die2', 'assets/sprites/penguin_die02.png');
+        this.load.image('penguin_die3', 'assets/sprites/penguin_die03.png');
+        this.load.image('penguin_die4', 'assets/sprites/penguin_die04.png');
+        
+        this.load.image('penguin_hurt', 'assets/sprites/penguin_hurt.png');
     }
 
     create() {
         // Inicializar variables
         this.gameWidth = this.sys.game.config.width;
         this.gameHeight = this.sys.game.config.height;
+        
+        // Crear animaciones para el pingüino
+        this.setupAnimations();
         
         // Crear líneas de inicio y meta
         this.createLines();
@@ -51,6 +70,56 @@ class GameScene extends Phaser.Scene {
         
         // Iniciar el semáforo
         this.trafficLight.start();
+    }
+    
+    /**
+     * Configura las animaciones del juego
+     */
+    setupAnimations() {
+        // Animación de caminar
+        this.anims.create({
+            key: 'walk',
+            frames: [
+                { key: 'penguin_walk1' },
+                { key: 'penguin_walk2' },
+                { key: 'penguin_walk3' },
+                { key: 'penguin_walk4' }
+            ],
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Animación de deslizamiento
+        this.anims.create({
+            key: 'slide',
+            frames: [
+                { key: 'penguin_slide1' },
+                { key: 'penguin_slide2' }
+            ],
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Animación de muerte
+        this.anims.create({
+            key: 'die',
+            frames: [
+                { key: 'penguin_die1' },
+                { key: 'penguin_die2' },
+                { key: 'penguin_die3' },
+                { key: 'penguin_die4' }
+            ],
+            frameRate: 8,
+            repeat: 0
+        });
+        
+        // Animación de daño/herida
+        this.anims.create({
+            key: 'hurt',
+            frames: [{ key: 'penguin_hurt' }],
+            frameRate: 1,
+            repeat: 0
+        });
     }
     
     /**
