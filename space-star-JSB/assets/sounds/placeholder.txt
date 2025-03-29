@@ -1,5 +1,0 @@
-Replace this file with actual sound effect assets:
-- laser.mp3 (player laser sound)
-- explosion.mp3 (enemy explosion sound)
-- hit.mp3 (collision/damage sound)
-- game-over.mp3 (game over sound) 

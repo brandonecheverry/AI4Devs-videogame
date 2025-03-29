@@ -1,3 +1,0 @@
-Replace this file with actual music assets:
-- menu-music.mp3 (background music for menu)
-- game-music.mp3 (background music for gameplay) 
