@@ -36,4 +36,13 @@
 - RSpec para tests automatizados
 - Desarrollo iterativo con ciclos de implementación-prueba
 
-Este archivo se actualizará conforme el proyecto evolucione y se descubran nuevos patrones o preferencias importantes. 
+Este archivo se actualizará conforme el proyecto evolucione y se descubran nuevos patrones o preferencias importantes.
+
+# Registro de Prompts.
+Guarda todos los Prompts en orden cronologico en el archivo `prompts.md`
+Ej:
+numero de prompt: 1
+prompt: "Quiero que la Horientacion sea hacia el lado que el personaje parta a la izquierda y se mueva a la derecha.sz
+La barra espacio no esta moviendo el personaje"
+
+numero de prompt: 2
