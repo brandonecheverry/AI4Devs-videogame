@@ -51,18 +51,35 @@ h2 {
 button {
     padding: 1rem 2rem;
     font-size: 1.5rem;
-    background-color: #ff4500;
+    background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 1rem;
+    margin: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
-    background-color: #ff6a33;
-    transform: scale(1.05);
+    background-color: #45a049;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#btn-jugar {
+    background-color: #2196F3;
+    font-size: 1.8rem;
+    padding: 1.2rem 2.5rem;
+}
+
+#btn-jugar:hover {
+    background-color: #0b7dda;
 }
 
 .btn-secundario {
@@ -242,4 +259,88 @@ p {
 
 .moviendo {
     animation: parpadeo 0.5s infinite;
+}
+
+/* Logo de Breakout en la pantalla de inicio */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+.logo-imagen {
+    max-width: 800px;
+    height: auto;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.ladrillo {
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.rojo {
+    background-color: #FF5252;
+}
+
+.naranja {
+    background-color: #FF9800;
+}
+
+.amarillo {
+    background-color: #FFEB3B;
+}
+
+.verde {
+    background-color: #4CAF50;
+}
+
+.pelota-logo {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: flotar 2s infinite ease-in-out;
+}
+
+@keyframes flotar {
+    0%, 100% {
+        transform: translate(-50%, -50%);
+    }
+    50% {
+        transform: translate(-50%, -65%);
+    }
+}
+
+#pantalla-inicio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+#pantalla-inicio h1 {
+    font-size: 3.5rem;
+    margin-bottom: 2rem;
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+    animation: pulsar 2s infinite;
+}
+
+@keyframes pulsar {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
 } 

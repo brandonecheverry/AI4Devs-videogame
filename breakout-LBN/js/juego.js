@@ -193,6 +193,13 @@ canvas.addEventListener('click', () => {
     }
 });
 
+// Añadir control de pausa con clic en el overlay
+pausaOverlay.addEventListener('click', () => {
+    if (juegoEnCurso && juegoEnPausa) {
+        togglePausa();
+    }
+});
+
 // Función para alternar pausa
 function togglePausa() {
     juegoEnPausa = !juegoEnPausa;
