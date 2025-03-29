@@ -457,46 +457,119 @@ function addTunnelDetails(tunnelSegment, width, height, length) {
 
 // Create the player's spaceship
 function createSpaceship() {
-    // Simplified spaceship model using basic shapes
+    // Create a temporary placeholder while the model loads
     spaceship = new THREE.Group();
-    
-    // Spaceship body
-    const bodyGeometry = new THREE.ConeGeometry(0.5, 2, 8);
-    bodyGeometry.rotateX(Math.PI / 2);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x3366cc, 
-        shininess: 80,
-        specular: 0x111111
-    });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.castShadow = true;
-    spaceship.add(body);
-    
-    // Spaceship wings
-    const wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
-    const wingMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x2255aa,
-        shininess: 40,
-        specular: 0x111111
-    });
-    const wings = new THREE.Mesh(wingGeometry, wingMaterial);
-    wings.position.set(0, -0.2, 0);
-    wings.castShadow = true;
-    spaceship.add(wings);
-    
-    // Spaceship engine glow
-    const engineGlowGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.3, 8);
-    engineGlowGeometry.rotateX(Math.PI / 2);
-    const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0x66aaff });
-    const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
-    engineGlow.position.set(0, 0, 1);
-    spaceship.add(engineGlow);
-    
-    // Position the spaceship
-    spaceship.position.set(0, 0, 0);
     scene.add(spaceship);
     
-    // Position camera relative to spaceship
+    // Load the GLTF model
+    const loader = new GLTFLoader();
+    loader.load(
+        './assets/models/spaceship.glb',
+        function (gltf) {
+            console.log('Model loaded successfully:', gltf);
+            
+            // Remove any existing children from the spaceship group
+            while(spaceship.children.length > 0) {
+                spaceship.remove(spaceship.children[0]);
+            }
+            
+            // Add the loaded model to our spaceship group
+            const model = gltf.scene;
+            
+            // Scale and position adjustments
+            model.scale.set(1, 1, 1); // Increased scale from 0.2 to 1
+            model.rotation.set(0, Math.PI, 0); // Rotate to face forward
+            
+            // Enable shadows and enhance materials for all meshes
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    console.log('Processing mesh:', node.name);
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    
+                    // Enhance materials for better visual quality
+                    if (node.material) {
+                        node.material.metalness = 0.8;
+                        node.material.roughness = 0.2;
+                        node.material.envMapIntensity = 1.5;
+                        // Ensure material updates
+                        node.material.needsUpdate = true;
+                    }
+                }
+            });
+            
+            spaceship.add(model);
+            
+            // Add engine glow effect behind the ship
+            const engineGlowGeometry = new THREE.ConeGeometry(0.05, 0.3, 8);
+            engineGlowGeometry.rotateX(-Math.PI / 2); // Point backwards
+            const engineGlowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+            const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+            engineGlow.position.set(0, 0, 0.5); // Position it at the back of the ship
+            
+            // Add a second, inner glow for more effect
+            const innerGlowGeometry = new THREE.ConeGeometry(0.02, 0.2, 8);
+            innerGlowGeometry.rotateX(-Math.PI / 2);
+            const innerGlowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+            const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+            innerGlow.position.copy(engineGlow.position);
+            
+            spaceship.add(engineGlow);
+            spaceship.add(innerGlow);
+            
+            // Ensure proper positioning after model load
+            spaceship.position.set(0, 0, 0);
+            camera.position.set(0, 2, 5);
+            camera.lookAt(spaceship.position);
+        },
+        // Loading progress callback
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // Error callback
+        function (error) {
+            console.error('Error loading model:', error);
+            
+            // If loading fails, create a basic spaceship as fallback
+            console.log('Creating fallback spaceship geometry');
+            const bodyGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+            bodyGeometry.rotateX(Math.PI / 2);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x3366cc, 
+                shininess: 80,
+                specular: 0x111111
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            spaceship.add(body);
+            
+            const wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
+            const wingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x2255aa,
+                shininess: 40,
+                specular: 0x111111
+            });
+            const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+            wings.position.set(0, -0.2, 0);
+            wings.castShadow = true;
+            spaceship.add(wings);
+        }
+    );
+    
+    // Initial position setup
+    spaceship.position.set(0, 0, 0);
     camera.position.set(0, 2, 5);
     camera.lookAt(spaceship.position);
 }
