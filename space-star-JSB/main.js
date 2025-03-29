@@ -478,7 +478,7 @@ function createSpaceship() {
             
             // Scale and position adjustments
             model.scale.set(1, 1, 1);
-            model.rotation.set(0, Math.PI, 0); // Changed from Math.PI to 0 to rotate 180 degrees
+            model.rotation.set(0, Math.PI, 0);
             
             // Enable shadows and enhance materials for all meshes
             model.traverse((node) => {
@@ -489,10 +489,21 @@ function createSpaceship() {
                     
                     // Enhance materials for better visual quality
                     if (node.material) {
-                        node.material.metalness = 0.8;
-                        node.material.roughness = 0.2;
-                        node.material.envMapIntensity = 1.5;
-                        // Ensure material updates
+                        // Adjust material properties for sharper look
+                        node.material.metalness = 0.7;
+                        node.material.roughness = 0.3;
+                        node.material.envMapIntensity = 2.0;
+                        
+                        // Improve texture filtering if there's a texture
+                        if (node.material.map) {
+                            node.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                            node.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                            node.material.map.magFilter = THREE.LinearFilter;
+                            node.material.map.needsUpdate = true;
+                        }
+                        
+                        // Enable high quality rendering
+                        node.material.precision = 'highp';
                         node.material.needsUpdate = true;
                     }
                 }
