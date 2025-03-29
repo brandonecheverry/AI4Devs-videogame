@@ -78,7 +78,7 @@ function crearBotonesNiveles() {
         const nivelNum = i + 1;
         const btnNivel = document.createElement('button');
         btnNivel.textContent = nivelNum;
-        btnNivel.classList.add('btn-nivel');
+        btnNivel.classList.add('btn-nivel', 'pixel-border');
         
         // Determinar estado del nivel
         if (estadoNiveles.nivelesCompletados[i]) {
@@ -193,6 +193,13 @@ canvas.addEventListener('click', () => {
     }
 });
 
+// Añadir control de pausa con clic en el overlay
+pausaOverlay.addEventListener('click', () => {
+    if (juegoEnCurso && juegoEnPausa) {
+        togglePausa();
+    }
+});
+
 // Función para alternar pausa
 function togglePausa() {
     juegoEnPausa = !juegoEnPausa;
@@ -295,13 +302,30 @@ function detectarColisionPared() {
 }
 
 function detectarColisionPala() {
-    if (pelota.y + pelota.velocidadY > canvas.height - pelota.radio - pala.alto) {
+    if (pelota.y + pelota.velocidadY > canvas.height - pelota.radio - pala.alto &&
+        pelota.y + pelota.velocidadY < canvas.height - pelota.radio) {
         if (pelota.x > pala.x && pelota.x < pala.x + pala.ancho) {
             // Calcular la dirección de rebote según donde golpee la pala
             const impacto = (pelota.x - (pala.x + pala.ancho / 2)) / (pala.ancho / 2);
-            pelota.velocidadX = impacto * 5; // Influencia del lugar de golpeo
-            pelota.velocidadY = -pelota.velocidadY;
+            
+            // Límite del efecto de impacto para evitar ángulos extremos
+            const maxImpacto = 0.8;
+            const impactoLimitado = Math.max(-maxImpacto, Math.min(maxImpacto, impacto));
+            
+            // Calcular nueva velocidad basada en el impacto
+            const velocidadTotal = Math.sqrt(pelota.velocidadX * pelota.velocidadX + pelota.velocidadY * pelota.velocidadY);
+            
+            // Ajustar la velocidad X basada en el impacto, pero manteniendo la magnitud de velocidad
+            pelota.velocidadX = impactoLimitado * velocidadTotal;
+            
+            // Asegurar que la velocidad Y sea negativa (hacia arriba) y mantener la magnitud total
+            const nuevaVelocidadY = -Math.sqrt(velocidadTotal * velocidadTotal - pelota.velocidadX * pelota.velocidadX);
+            pelota.velocidadY = nuevaVelocidadY;
+            
             reproducirSonido('rebote');
+            
+            // Evitar que la pelota quede atrapada en la pala
+            pelota.y = canvas.height - pelota.radio - pala.alto - 1;
         } else if (pelota.y + pelota.velocidadY > canvas.height - pelota.radio) {
             // La pelota cae fuera de la pala
             perderVida();
@@ -313,24 +337,49 @@ function detectarColisionBloques() {
     for (let i = 0; i < bloques.length; i++) {
         const bloque = bloques[i];
         if (bloque.activo) {
-            // Detección básica de colisión con bloques
-            if (pelota.x > bloque.x && pelota.x < bloque.x + bloque.ancho &&
-                pelota.y > bloque.y && pelota.y < bloque.y + bloque.alto) {
+            // Verificar si la pelota está en contacto con el bloque
+            const centroX = pelota.x;
+            const centroY = pelota.y;
+            
+            // Encontrar el punto más cercano del bloque al centro de la pelota
+            const puntoMasCercanoX = Math.max(bloque.x, Math.min(centroX, bloque.x + bloque.ancho));
+            const puntoMasCercanoY = Math.max(bloque.y, Math.min(centroY, bloque.y + bloque.alto));
+            
+            // Calcular distancia entre el centro de la pelota y el punto más cercano
+            const distanciaX = centroX - puntoMasCercanoX;
+            const distanciaY = centroY - puntoMasCercanoY;
+            const distancia = Math.sqrt(distanciaX * distanciaX + distanciaY * distanciaY);
+            
+            // Si la distancia es menor que el radio, hay colisión
+            if (distancia < pelota.radio) {
+                // Determinar el lado de colisión
+                // Calculamos las distancias a cada borde del bloque
+                const distIzquierda = Math.abs(centroX - bloque.x);
+                const distDerecha = Math.abs(centroX - (bloque.x + bloque.ancho));
+                const distArriba = Math.abs(centroY - bloque.y);
+                const distAbajo = Math.abs(centroY - (bloque.y + bloque.alto));
                 
-                // Determinar el lado más cercano para un rebote más realista
-                const dx = Math.min(
-                    Math.abs(pelota.x - bloque.x),
-                    Math.abs(pelota.x - (bloque.x + bloque.ancho))
-                );
-                const dy = Math.min(
-                    Math.abs(pelota.y - bloque.y),
-                    Math.abs(pelota.y - (bloque.y + bloque.alto))
-                );
+                // Determinar en qué lado ocurrió la colisión
+                const minDist = Math.min(distIzquierda, distDerecha, distArriba, distAbajo);
                 
-                if (dx < dy) {
+                if (minDist === distIzquierda || minDist === distDerecha) {
+                    // Colisión lateral
                     pelota.velocidadX = -pelota.velocidadX;
+                    // Ajustar posición para evitar penetración
+                    if (minDist === distIzquierda) {
+                        pelota.x = bloque.x - pelota.radio - 0.1;
+                    } else {
+                        pelota.x = bloque.x + bloque.ancho + pelota.radio + 0.1;
+                    }
                 } else {
+                    // Colisión vertical
                     pelota.velocidadY = -pelota.velocidadY;
+                    // Ajustar posición para evitar penetración
+                    if (minDist === distArriba) {
+                        pelota.y = bloque.y - pelota.radio - 0.1;
+                    } else {
+                        pelota.y = bloque.y + bloque.alto + pelota.radio + 0.1;
+                    }
                 }
                 
                 // Comportamiento según tipo de ladrillo
@@ -595,11 +644,30 @@ function actualizarJuego() {
     pelota.x += pelota.velocidadX;
     pelota.y += pelota.velocidadY;
     
-    // Incrementar velocidad gradualmente
+    // Limitar la velocidad de la pelota
     const velocidadTotal = Math.sqrt(pelota.velocidadX * pelota.velocidadX + pelota.velocidadY * pelota.velocidadY);
-    if (velocidadTotal < 12) { // Velocidad máxima
-        pelota.velocidadX *= (1 + configuracion.incrementoVelocidad / 1000);
-        pelota.velocidadY *= (1 + configuracion.incrementoVelocidad / 1000);
+    const velocidadMaxima = 10; // Velocidad máxima permitida
+    const velocidadMinima = 3;  // Velocidad mínima permitida
+    
+    if (velocidadTotal > velocidadMaxima) {
+        // Reducir proporcionalmente ambas componentes
+        const factor = velocidadMaxima / velocidadTotal;
+        pelota.velocidadX *= factor;
+        pelota.velocidadY *= factor;
+    } else if (velocidadTotal < velocidadMinima) {
+        // Aumentar proporcionalmente ambas componentes
+        const factor = velocidadMinima / velocidadTotal;
+        pelota.velocidadX *= factor;
+        pelota.velocidadY *= factor;
+    } else {
+        // Incrementar velocidad gradualmente, pero de manera controlada
+        pelota.velocidadX *= (1 + configuracion.incrementoVelocidad / 2000);
+        pelota.velocidadY *= (1 + configuracion.incrementoVelocidad / 2000);
+    }
+    
+    // Asegurar que la velocidad en X nunca sea demasiado pequeña
+    if (Math.abs(pelota.velocidadX) < 1.5) {
+        pelota.velocidadX = (pelota.velocidadX > 0) ? 1.5 : -1.5;
     }
     
     animacionId = requestAnimationFrame(actualizarJuego);
@@ -714,8 +782,18 @@ window.addEventListener('load', () => {
 setInterval(() => {
     if (juegoEnCurso && !juegoEnPausa) {
         // Verificar si la pelota está "atascada" en movimiento vertical
-        if (Math.abs(pelota.velocidadX) < 0.5) {
-            pelota.velocidadX = (Math.random() * 2 - 1) * 2; // Darle un empujón
+        if (Math.abs(pelota.velocidadX) < 1.0) {
+            // Dar un empujón lateral significativo pero no excesivo
+            pelota.velocidadX = (pelota.velocidadX > 0) ? 2.0 : -2.0;
+        }
+        
+        // Verificar si la pelota está moviéndose demasiado vertical
+        const velocidadTotal = Math.sqrt(pelota.velocidadX * pelota.velocidadX + pelota.velocidadY * pelota.velocidadY);
+        if (Math.abs(pelota.velocidadY) > 0.95 * velocidadTotal) {
+            // Ajustar para un ángulo más favorable (menos vertical)
+            const nuevoAngulo = Math.sign(pelota.velocidadY) * (Math.PI / 3); // 60 grados
+            pelota.velocidadX = velocidadTotal * Math.cos(nuevoAngulo);
+            pelota.velocidadY = velocidadTotal * Math.sin(nuevoAngulo);
         }
     }
-}, 3000); 
+}, 2000); 
