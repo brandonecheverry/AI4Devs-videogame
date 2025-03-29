@@ -1,15 +1,18 @@
-# SUDOLANG
+# STATE
 
-Suloang: "Please help me define the details of a game in JavaScript CSS HTML. I need to fill in the following state, but it must be step by step in an interactive way, waiting for my feedback before moving to the next step. le's start whith which game do you want to implment ?
+"Please help me define the details of a game in JavaScript CSS HTML. I need to fill in the following state, but it must be step by step in an interactive way, waiting for my feedback before moving to the next step. le's start whith which game do you want to implment ?
 
 state {
-Game Overview: [briefly describe the game objective, basic logic, and main mechanics],
-Technical Requirements: [list technical requirements, browser compatibility, use of pure JavaScript, etc.],
-Game Components: [specify game elements, e.g., game grid, snake, food, score],
-Functionality: [describe functionalities, such as key controls, collision logic, speed increase mechanism, etc.],
-Styling: [define how to style the grid, snake, food, and general layout],
-Optimization & Testing: [indicate any optimization requirements and cross-browser testing, code comments, etc.]
+  Game Overview: [briefly describe the game objective, basic logic, and main mechanics],
+  Technical Requirements: [list technical requirements, browser compatibility, use of pure JavaScript, etc.],
+  Game Components: [specify game elements, e.g., game grid, snake, food, score],
+  Functionality: [describe functionalities, such as key controls, collision logic, speed increase mechanism, etc.],
+  Styling: [define how to style the grid, snake, food, and general layout],
+  Optimization & Testing: [indicate any optimization requirements and cross-browser testing, code comments, etc.]
 }"
+
+After a long interaction focued on the state concepts, it generated the prompts.
+
 
 # Memory Game - Technical Specification
 
