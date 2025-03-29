@@ -355,39 +355,43 @@ function createTunnel() {
     const tunnelSegmentLength = 20;
     const tunnelWidth = 8;
     const tunnelHeight = 8;
+    const wallThickness = 1; // Increased wall thickness to prevent gaps
     
     // Load tunnel texture
     const textureLoader = new THREE.TextureLoader();
     const tunnelTexture = textureLoader.load('assets/images/tunnel-texture.jpg');
     tunnelTexture.wrapS = THREE.RepeatWrapping;
     tunnelTexture.wrapT = THREE.RepeatWrapping;
-    tunnelTexture.repeat.set(2, 4); // Increased from 1,2 to 4,8 for smaller pattern
+    tunnelTexture.repeat.set(2, 4);
+    tunnelTexture.magFilter = THREE.LinearFilter;
+    tunnelTexture.minFilter = THREE.LinearMipmapLinearFilter;
     
     // Tunnel materials with texture
     const tunnelMaterial = new THREE.MeshStandardMaterial({
         map: tunnelTexture,
         metalness: 0.8,
         roughness: 0.3,
-        emissive: 0x111111
+        emissive: 0x111111,
+        side: THREE.DoubleSide
     });
     
-    // Floor
-    const floorGeometry = new THREE.BoxGeometry(tunnelWidth, 0.5, tunnelSegmentLength);
+    // Floor with overlap
+    const floorGeometry = new THREE.BoxGeometry(tunnelWidth + 1, 0.5, tunnelSegmentLength + 1);
     const floor = new THREE.Mesh(floorGeometry, tunnelMaterial);
     floor.position.set(0, -tunnelHeight/2, -tunnelSegmentLength/2);
     floor.receiveShadow = true;
     tunnel.add(floor);
     
-    // Left wall
-    const leftWallGeometry = new THREE.BoxGeometry(0.5, tunnelHeight, tunnelSegmentLength);
-    const leftWall = new THREE.Mesh(leftWallGeometry, tunnelMaterial);
+    // Left wall with overlap
+    const leftWallGeometry = new THREE.BoxGeometry(wallThickness, tunnelHeight, tunnelSegmentLength + 1);
+    const leftWall = new THREE.Mesh(leftWallGeometry, tunnelMaterial.clone()); // Clone material to prevent sharing
     leftWall.position.set(-tunnelWidth/2, 0, -tunnelSegmentLength/2);
     leftWall.receiveShadow = true;
     tunnel.add(leftWall);
     
-    // Right wall
-    const rightWallGeometry = new THREE.BoxGeometry(0.5, tunnelHeight, tunnelSegmentLength);
-    const rightWall = new THREE.Mesh(rightWallGeometry, tunnelMaterial);
+    // Right wall with overlap
+    const rightWallGeometry = new THREE.BoxGeometry(wallThickness, tunnelHeight, tunnelSegmentLength + 1);
+    const rightWall = new THREE.Mesh(rightWallGeometry, tunnelMaterial.clone()); // Clone material to prevent sharing
     rightWall.position.set(tunnelWidth/2, 0, -tunnelSegmentLength/2);
     rightWall.receiveShadow = true;
     tunnel.add(rightWall);
@@ -396,9 +400,12 @@ function createTunnel() {
     addTunnelDetails(tunnel, tunnelWidth, tunnelHeight, tunnelSegmentLength);
     
     // Create multiple segments for the illusion of an endless tunnel
-    for (let i = 1; i < 10; i++) {
+    // Add more segments and overlap them slightly
+    const segmentCount = 12; // Increased from 10 to 12 for better coverage
+    for (let i = 1; i < segmentCount; i++) {
         const segment = tunnel.clone();
-        segment.position.z = -tunnelSegmentLength * i;
+        // Overlap segments slightly to prevent gaps
+        segment.position.z = -(tunnelSegmentLength * i - 0.5);
         scene.add(segment);
     }
 }
@@ -1103,11 +1110,24 @@ function updateTunnel(deltaTime) {
     // Move all tunnel segments forward
     scene.children.forEach(child => {
         if (child.type === 'Group' && child !== spaceship && !enemies.find(e => e.mesh === child)) {
-            child.position.z += speed * deltaTime * 0.3; // Increased from 0.2 to 0.3 for faster tunnel movement
+            child.position.z += speed * deltaTime * 0.3;
             
             // If a segment has passed the player, reset it to the back
+            // Add overlap in the reset position
             if (child.position.z > 20) {
-                child.position.z -= 20 * 10; // Reset to back of tunnel (10 segments * 20 length)
+                const segmentCount = 12;
+                child.position.z -= (20 * segmentCount - 0.5);
+                
+                // Reset UV offset and ensure proper texture update
+                child.traverse((object) => {
+                    if (object.isMesh && object.material.map) {
+                        object.material.map.offset.set(0, 0);
+                        object.material.map.needsUpdate = true;
+                        // Ensure proper texture filtering
+                        object.material.map.magFilter = THREE.LinearFilter;
+                        object.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                    }
+                });
             }
         }
     });
