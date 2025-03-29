@@ -25,7 +25,7 @@ A space combat video game developed using JavaScript, HTML, CSS, and Three.js.
 
 ## Requirements
 
-You need python3 installed on your system to run the game server.
+⚠️ You need python3 installed on your system to run the game server.
 
 ## Start the game
 
