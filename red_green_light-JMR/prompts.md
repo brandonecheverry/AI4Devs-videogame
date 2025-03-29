@@ -78,3 +78,74 @@ phaser.min.js:1
             
            GET file:///Users/rkm/Desktop/Estudio/lidr/AI4Devs-videogame/red_green_light-JMR/assets/audio/greenLight.mp3 net::ERR_FAILED
 
+10) Lo probe y ahora No hay errores en consola, pero no se reproduce el audio, agrega console.log para poder debugear
+
+11) Si bien aparecen los logs 
+Intentando desbloquear audio por interacción del usuario
+game.js:119 No se pudo desbloquear el audio
+game.js:100 Intentando desbloquear audio por interacción del usuario
+game.js:107 Audio desbloqueado correctamente
+game.js:347 Objeto greenLightMusic no disponible para pausar
+game.js:384 Objeto greenLightMusic no disponible para reproducir
+game.js:347 Objeto greenLightMusic no disponible para pausar
+game.js:384 Objeto greenLightMusic no disponible para reproducir
+
+el audio no funciona. Cual podria ser el error?
+
+
+12) Aun no funciona:⭐ Verificando si el audio existe en la caché: false
+game.js:179 ⭐ Estado del sistema antes de crear audio: bloqueado
+game.js:197 ⭐ Sistema de audio bloqueado, esperando interacción del usuario
+phaser.min.js:1 
+            
+            
+           GET https://bigtincan.github.io/sample-audio-files/imperial_march.mp3 net::ERR_FAILED 404 (Not Found)
+(anónimas) @ phaser.min.js:1
+load @ phaser.min.js:1
+(anónimas) @ phaser.min.js:1
+each @ phaser.min.js:1
+checkLoadQueue @ phaser.min.js:1
+start @ phaser.min.js:1
+bootScene @ phaser.min.js:1
+start @ phaser.min.js:1
+bootQueue @ phaser.min.js:1
+(anónimas) @ phaser.min.js:1
+texturesReady @ phaser.min.js:1
+(anónimas) @ phaser.min.js:1
+updatePending @ phaser.min.js:1
+(anónimas) @ phaser.min.js:1
+(anónimas) @ phaser.min.js:1Comprende este errorAI
+game.js:105 Intentando desbloquear audio por interacción del usuario
+game.js:138 No se pudo desbloquear el audio
+game.js:105 Intentando desbloquear audio por interacción del usuario
+game.js:112 Audio desbloqueado correctamente
+game.js:115 ⭐ Creando audio después del desbloqueo
+game.js:128 ⭐ El audio no está en caché
+overrideMethod @ hook.js:608
+(anónimas) @ game.js:128
+(anónimas) @ phaser.min.js:1
+processDownEvents @ phaser.min.js:1
+update @ phaser.min.js:1
+updateInputPlugins @ phaser.min.js:1
+onMouseDown @ phaser.min.js:1
+s.m.n.startListeners.onMouseDown @ phaser.min.js:1Comprende este errorAI
+game.js:252 TECLA ESPACIO PRESIONADA - EVENTO TECLADO
+
+13) https://raw.githubusercontent.com/mozillascience/friendly-github/master/assets/audio/human-voice.mp3 da 404
+
+14) @https://mdn.github.io/learning-area/javascript/apis/introduction/assets/audio-sample.mp3  tampoco esta disponible, por que no puedo usar mi audio local?
+
+15) El audio funciona, pero necesito que sea mi audio y no este, cuales serian los pasos para implementarlo?
+
+16) Refactoriza el codigo con principios SOLID, para que este sea mas legible
+
+17) Genera un plan para cambiar el personaje por el pinguino de los sprites, y animarlo para que camine.
+
+18) Genera un Plan Para refactorizar el codigo y que quede mas mantenible, no cambies las funcionalidades actuales
+
+19) Genera un plan para refactorizar @game.js , para hacerlo mas mantenible has un plan por pasos pequeños
+
+20) Fase 2: Modularización
+Crear clase Player
+Encapsular toda la lógica del jugador en una clase
+Incluir métodos para mover, detener y eliminar al jugador
