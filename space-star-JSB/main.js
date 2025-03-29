@@ -356,9 +356,16 @@ function createTunnel() {
     const tunnelWidth = 8;
     const tunnelHeight = 8;
     
-    // Tunnel materials
+    // Load tunnel texture
+    const textureLoader = new THREE.TextureLoader();
+    const tunnelTexture = textureLoader.load('assets/images/tunnel-texture.jpg');
+    tunnelTexture.wrapS = THREE.RepeatWrapping;
+    tunnelTexture.wrapT = THREE.RepeatWrapping;
+    tunnelTexture.repeat.set(2, 4); // Increased from 1,2 to 4,8 for smaller pattern
+    
+    // Tunnel materials with texture
     const tunnelMaterial = new THREE.MeshStandardMaterial({
-        color: 0x444444,
+        map: tunnelTexture,
         metalness: 0.8,
         roughness: 0.3,
         emissive: 0x111111
@@ -410,20 +417,27 @@ function addTunnelDetails(tunnelSegment, width, height, length) {
         tunnelSegment.add(light);
     }
     
-    // Add wall panels
+    // Add wall panels with texture
+    const textureLoader = new THREE.TextureLoader();
+    const tunnelTexture = textureLoader.load('assets/images/tunnel-texture.jpg');
+    tunnelTexture.wrapS = THREE.RepeatWrapping;
+    tunnelTexture.wrapT = THREE.RepeatWrapping;
+    tunnelTexture.repeat.set(1, 2); // Increased from 0.5,1 to 2,4 for smaller pattern
+    
+    const panelMaterial = new THREE.MeshStandardMaterial({ 
+        map: tunnelTexture,
+        metalness: 0.9,
+        roughness: 0.2,
+        emissive: 0x111111
+    });
+    
     const panelCount = 8;
     const panelSpacing = length / panelCount;
     
     for (let i = 0; i < panelCount; i++) {
         // Left wall panels
         const leftPanelGeometry = new THREE.BoxGeometry(0.1, 2, 1);
-        const leftPanelMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x333333,
-            emissive: 0x111111,
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const leftPanel = new THREE.Mesh(leftPanelGeometry, leftPanelMaterial);
+        const leftPanel = new THREE.Mesh(leftPanelGeometry, panelMaterial);
         leftPanel.position.set(-width/2 + 0.2, 0, -i * panelSpacing);
         tunnelSegment.add(leftPanel);
         
