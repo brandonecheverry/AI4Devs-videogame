@@ -847,42 +847,80 @@ function checkReticleAlignment() {
 
 // Spawn a new enemy
 function spawnEnemy() {
-    // Create enemy ship
+    // Create enemy container
     const enemyGroup = new THREE.Group();
     
-    // Enemy body
-    const bodyGeometry = new THREE.ConeGeometry(0.5, 1.5, 8);
-    bodyGeometry.rotateX(-Math.PI / 2); // Facing the player
-    const bodyMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xaa2222, 
-        shininess: 40,
-        specular: 0x111111
-    });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    enemyGroup.add(body);
-    
-    // Enemy wings
-    const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.6);
-    const wingMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x882222,
-        shininess: 30
-    });
-    const wings = new THREE.Mesh(wingGeometry, wingMaterial);
-    wings.position.set(0, -0.1, 0);
-    enemyGroup.add(wings);
+    // Load the GLTF model
+    const loader = new GLTFLoader();
+    loader.load(
+        './assets/models/enemy-ship.glb',
+        function (gltf) {
+            // Add the loaded model to our enemy group
+            const model = gltf.scene;
+            
+            // Scale and position adjustments
+            model.scale.set(1, 1, 1);
+            model.rotation.set(0, Math.PI, 0); // Rotate to face the player
+            
+            // Enable shadows and enhance materials for all meshes
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    
+                    // Enhance materials for better visual quality
+                    if (node.material) {
+                        node.material.metalness = 0.8;
+                        node.material.roughness = 0.2;
+                        node.material.envMapIntensity = 1.5;
+                        node.material.needsUpdate = true;
+                    }
+                }
+            });
+            
+            enemyGroup.add(model);
+        },
+        // Loading progress callback
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // Error callback
+        function (error) {
+            console.error('Error loading enemy model:', error);
+            
+            // Fallback geometry if model fails to load
+            const bodyGeometry = new THREE.ConeGeometry(0.5, 1.5, 8);
+            bodyGeometry.rotateX(-Math.PI / 2);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xaa2222, 
+                shininess: 40,
+                specular: 0x111111
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            enemyGroup.add(body);
+            
+            const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.6);
+            const wingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x882222,
+                shininess: 30
+            });
+            const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+            wings.position.set(0, -0.1, 0);
+            enemyGroup.add(wings);
+        }
+    );
     
     // Position the enemy at a random position in the tunnel
-    // Reduced spawn area to prevent wall collisions
-    const x = (Math.random() - 0.5) * 4; // Reduced from 6 to 4 for safer spawn area
-    const y = (Math.random() - 0.5) * 3; // Reduced from 5 to 3 for safer spawn area
-    enemyGroup.position.set(x, y, -50); // Start far away
+    const x = (Math.random() - 0.5) * 4;
+    const y = (Math.random() - 0.5) * 3;
+    enemyGroup.position.set(x, y, -50);
     
     scene.add(enemyGroup);
     
-    // Add to enemies array with slightly randomized speed
+    // Add to enemies array with movement properties
     enemies.push({
         mesh: enemyGroup,
-        velocity: new THREE.Vector3(0, 0, 0.2 + Math.random() * 0.05), // Reduced speed variation
+        velocity: new THREE.Vector3(0, 0, 0.2 + Math.random() * 0.05),
         lastFired: 0
     });
 }
