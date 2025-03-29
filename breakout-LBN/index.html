@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout Arcade</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="pantalla-inicio" class="pantalla">
+            <h1>BREAKOUT</h1>
+            <button id="btn-jugar">JUGAR</button>
+        </div>
+
+        <div id="pantalla-juego" class="pantalla oculto">
+            <div class="info-juego">
+                <div class="puntuacion">Puntuación: <span id="puntuacion">0</span></div>
+                <div class="nivel">Nivel: <span id="nivel">1</span></div>
+                <div class="vidas">Vidas: <span id="vidas">3</span></div>
+            </div>
+            <canvas id="juego" width="800" height="600"></canvas>
+        </div>
+
+        <div id="pantalla-game-over" class="pantalla oculto">
+            <h1>GAME OVER</h1>
+            <p>Puntuación final: <span id="puntuacion-final">0</span></p>
+            <button id="btn-reiniciar-go">JUGAR DE NUEVO</button>
+        </div>
+
+        <div id="pantalla-victoria" class="pantalla oculto">
+            <h1>¡VICTORIA!</h1>
+            <p>Puntuación final: <span id="puntuacion-victoria">0</span></p>
+            <button id="btn-reiniciar-v">JUGAR DE NUEVO</button>
+        </div>
+    </div>
+
+    <script src="js/juego.js"></script>
+</body>
+</html> 
