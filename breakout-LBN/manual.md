@@ -9,17 +9,19 @@ Este manual proporciona toda la información necesaria para disfrutar al máximo
 4. [Reglas del juego](#reglas-del-juego)
 5. [Sistema de niveles](#sistema-de-niveles)
 6. [Tipos de ladrillos](#tipos-de-ladrillos)
-7. [Sistemas de pausa](#sistema-de-pausa)
-8. [Elementos del juego](#elementos-del-juego)
-9. [Estados del juego](#estados-del-juego)
-10. [Consejos y trucos](#consejos-y-trucos)
-11. [Solución de problemas](#solución-de-problemas)
+7. [Sistema de powerups](#sistema-de-powerups)
+8. [Sistema de combo](#sistema-de-combo)
+9. [Sistema de pausa](#sistema-de-pausa)
+10. [Elementos del juego](#elementos-del-juego)
+11. [Estados del juego](#estados-del-juego)
+12. [Consejos y trucos](#consejos-y-trucos)
+13. [Solución de problemas](#solución-de-problemas)
 
 ---
 
 ## Introducción
 
-Breakout es un juego arcade clásico donde controlas una pala en la parte inferior de la pantalla para hacer rebotar una pelota y destruir todos los ladrillos en la parte superior. El objetivo es eliminar todos los ladrillos sin dejar caer la pelota.
+Breakout es un juego arcade clásico donde controlas una pala en la parte inferior de la pantalla para hacer rebotar una pelota y destruir todos los ladrillos en la parte superior. El objetivo es eliminar todos los ladrillos sin dejar caer la pelota. Esta versión moderna incluye múltiples niveles, tipos especiales de ladrillos, powerups, un sistema de combo y efectos visuales para una experiencia más inmersiva.
 
 ---
 
@@ -34,7 +36,8 @@ Breakout es un juego arcade clásico donde controlas una pala en la parte inferi
 1. Descarga o clona el repositorio del juego
 2. Descomprime el archivo si es necesario
 3. Abre el archivo `index.html` en tu navegador web
-4. ¡Listo para jugar!
+4. Haz clic en el botón "JUGAR" para comenzar
+5. Selecciona el nivel que deseas jugar
 
 ---
 
@@ -133,6 +136,38 @@ El juego incluye varios tipos de ladrillos con comportamientos especiales:
 - Apariencia: Degradado azul con una flecha blanca
 - Comportamiento: Cambian de posición aleatoriamente cada 2 segundos.
 - Puntuación: 15 puntos
+
+---
+
+## Sistema de powerups
+
+Los powerups aparecen aleatoriamente cuando rompes un ladrillo normal. Caen desde la posición del ladrillo y debes atraparlos con la pala para activarlos.
+
+### Tipos de powerups
+
+#### Powerups positivos
+- **Pala Grande (G)**: Color naranja. Aumenta el tamaño de la pala en un 50%
+- **Pelota Lenta (L)**: Color azul. Reduce la velocidad de la pelota en un 30%
+- **Vida Extra (+)**: Color verde. Otorga una vida adicional
+
+#### Powerups negativos
+- **Pala Pequeña (P)**: Color rojo. Reduce el tamaño de la pala en un 30%
+- **Pelota Rápida (R)**: Color rosa. Aumenta la velocidad de la pelota en un 30%
+
+### Duración
+Todos los powerups (excepto Vida Extra) tienen una duración limitada de 8 segundos.
+
+---
+
+## Sistema de combo
+
+El juego incluye un sistema de combo que multiplica los puntos obtenidos por romper ladrillos:
+
+- Cada vez que rompes un ladrillo, se inicia o continúa un combo
+- Si rompes otro ladrillo dentro de los 2 segundos siguientes, el combo aumenta
+- El valor del combo multiplica los puntos base de cada ladrillo
+- El combo se reinicia si pasan más de 2 segundos sin romper un ladrillo
+- Un combo alto se indica en pantalla (por ejemplo, "COMBO x3")
 
 ---
 

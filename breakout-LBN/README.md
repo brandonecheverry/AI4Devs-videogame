@@ -13,6 +13,9 @@ Breakout es un juego arcade clásico donde el jugador controla una pala en la pa
 - Vidas múltiples
 - Sistema completo de 10 niveles
 - Ladrillos especiales con comportamientos únicos
+- Sistema de powerups
+- Sistema de combo para multiplicar puntos
+- Efectos visuales mejorados
 - Sistema de pausa
 - Efectos visuales y sonoros
 
@@ -30,8 +33,10 @@ Breakout es un juego arcade clásico donde el jugador controla una pala en la pa
 4. Selecciona un nivel para comenzar a jugar.
 5. Utiliza las teclas de flecha izquierda y derecha (o el ratón) para mover la pala.
 6. Pausa el juego con la tecla "P" o haciendo clic en el canvas.
-7. Si necesitas abandonar la partida, puedes usar el botón "SALIR" en la pantalla de juego.
-8. Intenta mantener la pelota en juego y destruir todos los ladrillos.
+7. Atrapa los powerups que caen de los ladrillos destruidos para obtener ventajas.
+8. Intenta romper ladrillos rápidamente para mantener combos y multiplicar puntos.
+9. Si necesitas abandonar la partida, puedes usar el botón "SALIR" en la pantalla de juego.
+10. Intenta mantener la pelota en juego y destruir todos los ladrillos.
 
 ## Características
 
@@ -39,7 +44,8 @@ Breakout es un juego arcade clásico donde el jugador controla una pala en la pa
 - **Control del jugador**: Usa las teclas de flecha (← →) o el ratón para mover la pala.
 - **Sistema de pausa**: Pausa el juego con la tecla "P" o clic en la pantalla.
 - **Botón de salida**: Abandona la partida actual y vuelve al menú principal en cualquier momento.
-- **Sistema de puntuación**: Gana puntos por cada ladrillo destruido.
+- **Sistema de puntuación**: Gana puntos por cada ladrillo destruido y rebotes en la pala.
+- **Sistema de combo**: Multiplica los puntos al romper ladrillos en rápida sucesión.
 - **Vidas**: El jugador tiene 3 vidas. Pierde una vida cuando la pelota cae por debajo de la pala.
 - **Condición de victoria**: Destruir todos los ladrillos destructibles en el nivel.
 - **Sistema de niveles**: 10 niveles diferentes con dificultad progresiva.
@@ -48,6 +54,13 @@ Breakout es un juego arcade clásico donde el jugador controla una pala en la pa
   - **Explosivos**: Destruyen los ladrillos cercanos al romperse.
   - **Regenerativos**: Se regeneran después de unos segundos.
   - **Móviles**: Cambian de posición aleatoriamente cada cierto tiempo.
+- **Sistema de powerups**:
+  - **Pala Grande**: Aumenta el tamaño de la pala en un 50% durante 8 segundos.
+  - **Pala Pequeña**: Reduce el tamaño de la pala en un 30% durante 8 segundos (efecto negativo).
+  - **Pelota Lenta**: Reduce la velocidad de la pelota en un 30% durante 8 segundos.
+  - **Pelota Rápida**: Aumenta la velocidad de la pelota en un 30% durante 8 segundos (efecto negativo).
+  - **Vida Extra**: Otorga una vida adicional.
+- **Efectos visuales mejorados**: Efectos de colisión, puntuación flotante, animaciones.
 - **Diferentes estados del juego**: Pantalla de inicio, selección de nivel, juego, game over y victoria.
 - **Efectos de sonido**: Incluye sonidos para rebotes, destrucción de ladrillos, victoria y derrota.
 
@@ -90,6 +103,26 @@ El juego incluye 10 niveles diferentes con las siguientes características:
 
 Todos los niveles están disponibles desde el inicio. Los niveles completados se marcan con un color verde y un símbolo de verificación para facilitar el seguimiento del progreso.
 
+## Sistema de powerups
+
+Los powerups aparecen aleatoriamente cuando destruyes un ladrillo normal. Caen desde la posición del ladrillo y deben ser atrapados con la pala para activarlos:
+
+- **Pala Grande (G)**: Aumenta el ancho de la pala en un 50% durante 8 segundos.
+- **Pala Pequeña (P)**: Reduce el ancho de la pala en un 30% durante 8 segundos (efecto negativo).
+- **Pelota Lenta (L)**: Reduce la velocidad de la pelota en un 30% durante 8 segundos.
+- **Pelota Rápida (R)**: Aumenta la velocidad de la pelota en un 30% durante 8 segundos (efecto negativo).
+- **Vida Extra (+)**: Otorga una vida adicional al jugador.
+
+## Sistema de combo
+
+El juego incorpora un sistema de combo que multiplica los puntos obtenidos:
+
+- Cada ladrillo destruido inicia o continúa un combo.
+- Si destruyes otro ladrillo en menos de 2 segundos, el combo aumenta.
+- El valor del combo multiplica los puntos base obtenidos por cada ladrillo.
+- El combo se reinicia si pasan más de 2 segundos sin destruir un ladrillo.
+- El valor del combo aparece en pantalla para que puedas seguir tu progreso.
+
 ## Personalización
 
 Puedes personalizar el juego modificando las siguientes configuraciones en los archivos `js/juego.js` y `js/niveles.js`:
@@ -99,6 +132,8 @@ Puedes personalizar el juego modificando las siguientes configuraciones en los a
 - Disposición y tipos de ladrillos en cada nivel
 - Comportamiento de los ladrillos especiales
 - Tiempos de regeneración y movimiento
+- Frecuencia y duración de los powerups
+- Tiempos para el sistema de combo
 - Efectos sonoros y visuales
 
 ## Seguridad

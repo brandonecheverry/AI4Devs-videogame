@@ -38,6 +38,10 @@ let tiempoUltimoPausado = 0;
 let ladrillosRegenerandose = [];
 let tiempoUltimoMovimiento = 0;
 let tipoLadrilloActual = 'normal';
+let powerupActivo = null;
+let tiempoFinPowerup = 0;
+let comboActual = 0;
+let tiempoUltimoBloque = 0;
 
 // Configuración del juego
 const configuracion = {
@@ -46,8 +50,23 @@ const configuracion = {
     incrementoVelocidad: 0.05,
     intervaloRegeneracion: 5000, // 5 segundos
     intervaloMovimiento: 2000,   // 2 segundos
-    radioExplosion: 2           // número de ladrillos afectados por explosión
+    radioExplosion: 2,          // número de ladrillos afectados por explosión
+    probabilidadPowerup: 0.15,   // probabilidad de que aparezca un powerup al romper un bloque
+    duracionPowerup: 8000,       // duración de los powerups en milisegundos
+    tiempoMaximoCombo: 2000      // tiempo máximo para mantener un combo en ms
 };
+
+// Tipos de powerups
+const POWERUP_TIPOS = {
+    PALA_GRANDE: 1,
+    PALA_PEQUENA: 2,
+    PELOTA_LENTA: 3,
+    PELOTA_RAPIDA: 4,
+    VIDA_EXTRA: 5
+};
+
+// Array para almacenar los powerups activos
+const powerups = [];
 
 // Objetos del juego
 const pelota = {
@@ -285,19 +304,25 @@ function dibujarPuntuacion() {
     vidasElement.textContent = vidas;
 }
 
-// Detección de colisiones
+// Detectar colisiones
 function detectarColisionPared() {
     // Colisión con paredes laterales
     if (pelota.x + pelota.velocidadX > canvas.width - pelota.radio || 
         pelota.x + pelota.velocidadX < pelota.radio) {
         pelota.velocidadX = -pelota.velocidadX;
         reproducirSonido('rebote');
+        
+        // Efecto visual de colisión en pared
+        mostrarEfectoColision(pelota.x, pelota.y, '#fff');
     }
     
     // Colisión con pared superior
     if (pelota.y + pelota.velocidadY < pelota.radio) {
         pelota.velocidadY = -pelota.velocidadY;
         reproducirSonido('rebote');
+        
+        // Efecto visual de colisión en pared
+        mostrarEfectoColision(pelota.x, pelota.y, '#fff');
     }
 }
 
@@ -331,10 +356,31 @@ function detectarColisionPala() {
             
             reproducirSonido('rebote');
             
+            // Efecto visual de colisión con la pala
+            mostrarEfectoColision(pelota.x, pelota.y, '#4CAF50');
+            
+            // Pequeña bonificación de puntuación por rebote en la pala
+            puntuacion += 1;
+            
             // Evitar que la pelota quede atrapada en la pala
             pelota.y = canvas.height - pelota.radio - pala.alto - 1;
         }
     }
+}
+
+// Efecto visual para colisiones
+function mostrarEfectoColision(x, y, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, pelota.radio * 1.5, 0, Math.PI * 2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+    
+    // Después de un momento, el efecto desaparece
+    setTimeout(() => {
+        // No hacemos nada aquí, el efecto desaparecerá en el siguiente frame
+    }, 100);
 }
 
 function detectarColisionBloques() {
@@ -386,39 +432,72 @@ function detectarColisionBloques() {
                     }
                 }
                 
+                // Sistema de combo
+                const tiempoActual = Date.now();
+                if (tiempoActual - tiempoUltimoBloque < configuracion.tiempoMaximoCombo) {
+                    comboActual++;
+                    if (comboActual > 1) {
+                        mostrarPuntuacionFlotante(bloque.x + bloque.ancho/2, bloque.y - 15, `COMBO x${comboActual}`);
+                    }
+                } else {
+                    comboActual = 1;
+                }
+                tiempoUltimoBloque = tiempoActual;
+                
                 // Comportamiento según tipo de ladrillo
                 switch (bloque.tipo) {
                     case LADRILLO_NORMAL:
                         bloque.activo = false;
-                        puntuacion += 10;
+                        // Puntuación base + bonus por combo
+                        const puntosGanados = 10 * comboActual;
+                        puntuacion += puntosGanados;
                         reproducirSonido('romperBloque');
+                        mostrarPuntuacionFlotante(bloque.x + bloque.ancho/2, bloque.y + bloque.alto/2, `+${puntosGanados}`);
+                        mostrarEfectoColision(puntoMasCercanoX, puntoMasCercanoY, '#FF5252');
+                        // Posibilidad de generar un powerup
+                        if (Math.random() < configuracion.probabilidadPowerup) {
+                            generarPowerup(bloque.x + bloque.ancho / 2, bloque.y + bloque.alto / 2);
+                        }
                         break;
                         
                     case LADRILLO_INDESTRUCTIBLE:
                         // Solo rebota, no se rompe
                         reproducirSonido('rebote');
+                        mostrarEfectoColision(puntoMasCercanoX, puntoMasCercanoY, '#999');
                         break;
                         
                     case LADRILLO_EXPLOSIVO:
                         bloque.activo = false;
-                        puntuacion += 20;
+                        // Puntuación base + bonus por combo
+                        const puntosExplosivos = 20 * comboActual;
+                        puntuacion += puntosExplosivos;
                         reproducirSonido('explosion');
+                        mostrarPuntuacionFlotante(bloque.x + bloque.ancho/2, bloque.y + bloque.alto/2, `+${puntosExplosivos}`);
+                        mostrarEfectoColision(puntoMasCercanoX, puntoMasCercanoY, '#ff4500');
                         // Explotar ladrillos cercanos
                         explotarLadrillosCercanos(bloque);
                         break;
                         
                     case LADRILLO_REGENERATIVO:
                         bloque.activo = false;
-                        puntuacion += 15;
+                        // Puntuación base + bonus por combo
+                        const puntosRegenerativos = 15 * comboActual;
+                        puntuacion += puntosRegenerativos;
                         reproducirSonido('romperBloque');
+                        mostrarPuntuacionFlotante(bloque.x + bloque.ancho/2, bloque.y + bloque.alto/2, `+${puntosRegenerativos}`);
+                        mostrarEfectoColision(puntoMasCercanoX, puntoMasCercanoY, '#4CAF50');
                         // Programar regeneración
                         programarRegeneracion(bloque);
                         break;
                         
                     case LADRILLO_MOVIL:
                         bloque.activo = false;
-                        puntuacion += 15;
+                        // Puntuación base + bonus por combo
+                        const puntosMoviles = 15 * comboActual;
+                        puntuacion += puntosMoviles;
                         reproducirSonido('romperBloque');
+                        mostrarPuntuacionFlotante(bloque.x + bloque.ancho/2, bloque.y + bloque.alto/2, `+${puntosMoviles}`);
+                        mostrarEfectoColision(puntoMasCercanoX, puntoMasCercanoY, '#2196F3');
                         break;
                 }
                 
@@ -430,6 +509,37 @@ function detectarColisionBloques() {
             }
         }
     }
+}
+
+// Mostrar puntuación flotante cuando se rompe un bloque
+function mostrarPuntuacionFlotante(x, y, texto) {
+    // Agregar elemento de texto flotante al DOM
+    const puntuacionFlotante = document.createElement('div');
+    puntuacionFlotante.className = 'puntuacion-flotante';
+    puntuacionFlotante.textContent = texto;
+    puntuacionFlotante.style.position = 'absolute';
+    puntuacionFlotante.style.left = `${x}px`;
+    puntuacionFlotante.style.top = `${y}px`;
+    puntuacionFlotante.style.color = '#ffcc00';
+    puntuacionFlotante.style.fontSize = '16px';
+    puntuacionFlotante.style.fontFamily = "'Press Start 2P', cursive";
+    puntuacionFlotante.style.textShadow = '0 0 5px rgba(255, 204, 0, 0.8)';
+    puntuacionFlotante.style.pointerEvents = 'none';
+    puntuacionFlotante.style.zIndex = '1000';
+    puntuacionFlotante.style.transition = 'all 1s ease-out';
+    
+    document.body.appendChild(puntuacionFlotante);
+    
+    // Animar la puntuación flotante
+    setTimeout(() => {
+        puntuacionFlotante.style.transform = 'translateY(-30px)';
+        puntuacionFlotante.style.opacity = '0';
+    }, 50);
+    
+    // Eliminar el elemento después de la animación
+    setTimeout(() => {
+        document.body.removeChild(puntuacionFlotante);
+    }, 1050);
 }
 
 // Función para explotar ladrillos cercanos
@@ -633,6 +743,7 @@ function actualizarJuego() {
     dibujarPala();
     dibujarBloques();
     dibujarPuntuacion();
+    dibujarPowerups();
     
     // Mover la pala con teclado
     if (teclaIzquierdaPresionada && pala.x > 0) {
@@ -649,7 +760,7 @@ function actualizarJuego() {
         }
     }
     
-    // Actualizar ladrillos especiales
+    // Actualizar elementos especiales
     if (tipoLadrilloActual === 'regenerativo') {
         actualizarLadrillosRegenerativos();
     }
@@ -657,6 +768,9 @@ function actualizarJuego() {
     if (tipoLadrilloActual === 'movil') {
         moverLadrillosMoviles();
     }
+    
+    // Actualizar powerups
+    actualizarPowerups();
     
     // Verificar si la pelota cayó fuera del canvas
     if (pelota.y > canvas.height) {
@@ -825,4 +939,214 @@ setInterval(() => {
             pelota.velocidadY = velocidadTotal * Math.sin(nuevoAngulo);
         }
     }
-}, 2000); 
+}, 2000);
+
+// Sistema de powerups
+function generarPowerup(x, y) {
+    // Elegir un tipo de powerup aleatorio
+    const tipoPowerup = Object.values(POWERUP_TIPOS)[Math.floor(Math.random() * Object.values(POWERUP_TIPOS).length)];
+    
+    const powerup = {
+        x: x,
+        y: y,
+        ancho: 30,
+        alto: 15,
+        velocidadY: 2,
+        tipo: tipoPowerup,
+        activo: true
+    };
+    
+    powerups.push(powerup);
+}
+
+function dibujarPowerups() {
+    powerups.forEach(powerup => {
+        if (powerup.activo) {
+            ctx.beginPath();
+            ctx.rect(powerup.x - powerup.ancho / 2, powerup.y - powerup.alto / 2, powerup.ancho, powerup.alto);
+            
+            // Color según tipo de powerup
+            switch (powerup.tipo) {
+                case POWERUP_TIPOS.PALA_GRANDE:
+                    ctx.fillStyle = '#FF9800';
+                    break;
+                case POWERUP_TIPOS.PALA_PEQUENA:
+                    ctx.fillStyle = '#F44336';
+                    break;
+                case POWERUP_TIPOS.PELOTA_LENTA:
+                    ctx.fillStyle = '#2196F3';
+                    break;
+                case POWERUP_TIPOS.PELOTA_RAPIDA:
+                    ctx.fillStyle = '#E91E63';
+                    break;
+                case POWERUP_TIPOS.VIDA_EXTRA:
+                    ctx.fillStyle = '#4CAF50';
+                    break;
+            }
+            
+            ctx.fill();
+            
+            // Letra o símbolo para identificar el powerup
+            ctx.fillStyle = '#FFF';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let simbolo = '';
+            switch (powerup.tipo) {
+                case POWERUP_TIPOS.PALA_GRANDE:
+                    simbolo = 'G';
+                    break;
+                case POWERUP_TIPOS.PALA_PEQUENA:
+                    simbolo = 'P';
+                    break;
+                case POWERUP_TIPOS.PELOTA_LENTA:
+                    simbolo = 'L';
+                    break;
+                case POWERUP_TIPOS.PELOTA_RAPIDA:
+                    simbolo = 'R';
+                    break;
+                case POWERUP_TIPOS.VIDA_EXTRA:
+                    simbolo = '+';
+                    break;
+            }
+            
+            ctx.fillText(simbolo, powerup.x, powerup.y);
+            ctx.closePath();
+        }
+    });
+}
+
+function actualizarPowerups() {
+    // Mover powerups hacia abajo
+    powerups.forEach(powerup => {
+        if (powerup.activo) {
+            powerup.y += powerup.velocidadY;
+            
+            // Si el powerup sale de la pantalla, desactivarlo
+            if (powerup.y > canvas.height) {
+                powerup.activo = false;
+            }
+            
+            // Verificar colisión con la pala
+            if (powerup.y + powerup.alto / 2 > pala.y && 
+                powerup.y - powerup.alto / 2 < pala.y + pala.alto && 
+                powerup.x + powerup.ancho / 2 > pala.x && 
+                powerup.x - powerup.ancho / 2 < pala.x + pala.ancho) {
+                
+                aplicarPowerup(powerup.tipo);
+                powerup.activo = false;
+            }
+        }
+    });
+    
+    // Eliminar powerups inactivos
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        if (!powerups[i].activo) {
+            powerups.splice(i, 1);
+        }
+    }
+    
+    // Verificar si hay un powerup activo y su tiempo de expiración
+    if (powerupActivo !== null && Date.now() > tiempoFinPowerup) {
+        finalizarPowerup();
+    }
+}
+
+function aplicarPowerup(tipo) {
+    // Si hay un powerup activo, finalizarlo primero
+    if (powerupActivo !== null) {
+        finalizarPowerup();
+    }
+    
+    // Guardar el nuevo powerup activo
+    powerupActivo = tipo;
+    tiempoFinPowerup = Date.now() + configuracion.duracionPowerup;
+    
+    // Aplicar efectos según el tipo de powerup
+    switch (tipo) {
+        case POWERUP_TIPOS.PALA_GRANDE:
+            // Aumentar el tamaño de la pala
+            pala.anchoOriginal = pala.ancho;
+            pala.ancho *= 1.5;
+            // Centrar la pala en su nueva posición
+            pala.x -= (pala.ancho - pala.anchoOriginal) / 2;
+            // Asegurar que la pala no salga de los límites
+            if (pala.x < 0) pala.x = 0;
+            if (pala.x + pala.ancho > canvas.width) pala.x = canvas.width - pala.ancho;
+            
+            mostrarPuntuacionFlotante(canvas.width/2, canvas.height/2, "¡PALA GRANDE!");
+            break;
+            
+        case POWERUP_TIPOS.PALA_PEQUENA:
+            // Reducir el tamaño de la pala (powerup negativo)
+            pala.anchoOriginal = pala.ancho;
+            pala.ancho *= 0.7;
+            // Centrar la pala en su nueva posición
+            pala.x += (pala.anchoOriginal - pala.ancho) / 2;
+            
+            mostrarPuntuacionFlotante(canvas.width/2, canvas.height/2, "¡PALA PEQUEÑA!");
+            break;
+            
+        case POWERUP_TIPOS.PELOTA_LENTA:
+            // Reducir la velocidad de la pelota
+            const factorLentitud = 0.7;
+            pelota.velocidadXOriginal = pelota.velocidadX;
+            pelota.velocidadYOriginal = pelota.velocidadY;
+            pelota.velocidadX *= factorLentitud;
+            pelota.velocidadY *= factorLentitud;
+            
+            mostrarPuntuacionFlotante(canvas.width/2, canvas.height/2, "¡PELOTA LENTA!");
+            break;
+            
+        case POWERUP_TIPOS.PELOTA_RAPIDA:
+            // Aumentar la velocidad de la pelota (powerup negativo)
+            const factorRapidez = 1.3;
+            pelota.velocidadXOriginal = pelota.velocidadX;
+            pelota.velocidadYOriginal = pelota.velocidadY;
+            pelota.velocidadX *= factorRapidez;
+            pelota.velocidadY *= factorRapidez;
+            
+            mostrarPuntuacionFlotante(canvas.width/2, canvas.height/2, "¡PELOTA RÁPIDA!");
+            break;
+            
+        case POWERUP_TIPOS.VIDA_EXTRA:
+            // Otorgar una vida extra
+            vidas++;
+            vidasElement.textContent = vidas;
+            
+            mostrarPuntuacionFlotante(canvas.width/2, canvas.height/2, "¡VIDA EXTRA!");
+            break;
+    }
+    
+    // Reproducir sonido de powerup
+    reproducirSonido('pausa'); // Usar el sonido de pausa por ahora
+}
+
+function finalizarPowerup() {
+    if (powerupActivo === null) return;
+    
+    // Restaurar valores originales según el tipo de powerup
+    switch (powerupActivo) {
+        case POWERUP_TIPOS.PALA_GRANDE:
+            // Restaurar tamaño original de la pala
+            pala.x += (pala.ancho - pala.anchoOriginal) / 2;
+            pala.ancho = pala.anchoOriginal;
+            break;
+            
+        case POWERUP_TIPOS.PALA_PEQUENA:
+            // Restaurar tamaño original de la pala
+            pala.x -= (pala.anchoOriginal - pala.ancho) / 2;
+            pala.ancho = pala.anchoOriginal;
+            break;
+            
+        case POWERUP_TIPOS.PELOTA_LENTA:
+        case POWERUP_TIPOS.PELOTA_RAPIDA:
+            // Restaurar velocidad original de la pelota
+            pelota.velocidadX = pelota.velocidadXOriginal;
+            pelota.velocidadY = pelota.velocidadYOriginal;
+            break;
+    }
+    
+    powerupActivo = null;
+} 
