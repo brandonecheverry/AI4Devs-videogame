@@ -14,10 +14,10 @@ export const GAME_CONFIG = {
 // Configuración del jugador
 export const PLAYER_CONFIG = {
     radius: 15,
-    maxSpeed: 300,
-    acceleration: 5,
-    deceleration: 3,
-    minSpeedThreshold: 5,
+    maxSpeed: 10,
+    acceleration: 0.2,
+    deceleration: 0.3,
+    minSpeedThreshold: 0.5,
     spriteSize: {
         width: 40,
         height: 40

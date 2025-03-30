@@ -22,6 +22,9 @@ class GameScene extends Phaser.Scene {
         // Cargar el archivo de audio para la luz verde
         this.load.audio('greenLight', 'assets/audio/greenLight.mp3');
         
+        // Cargar el sonido de la pistola para la muerte del pingüino
+        this.load.audio('pistol', 'assets/audio/pistol.mp3');
+        
         // Cargar sprites del pingüino
         this.load.image('penguin_walk1', 'assets/sprites/penguin_walk01.png');
         this.load.image('penguin_walk2', 'assets/sprites/penguin_walk02.png');

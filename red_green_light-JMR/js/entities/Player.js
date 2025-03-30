@@ -150,34 +150,75 @@ class Player {
         
         this.state = 'dead';
         
+        // Detener inmediatamente toda velocidad e inercia
+        this.speed = 0;
+        this.sprite.setVelocity(0);
+        
+        // Reproducir efecto de sonido de pistola
+        if (this.scene.cache.audio.exists('pistol')) {
+            this.scene.sound.play('pistol', { volume: 0.5 });
+        }
+        
         // Reproducir la animación de muerte
         this.sprite.play('die');
         
-        // Efecto visual de muerte
+        // Efecto de salto al morir
         this.scene.tweens.add({
             targets: this.sprite,
-            y: this.sprite.y + 30,
-            duration: 800,
-            ease: 'Power2',
+            y: this.sprite.y - 50, // Primero salta hacia arriba
+            duration: 300,
+            ease: 'Power1',
             onComplete: () => {
-                // Mancha de sangre donde murió el jugador
-                this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0xff0000);
-                
-                // Mensaje de game over
-                this.scene.add.text(400, 300, '¡ELIMINADO!', {
-                    fontSize: '48px',
-                    fill: '#ff0000'
-                }).setOrigin(0.5);
-                
-                this.scene.add.text(400, 350, 'Presiona R para reiniciar', {
-                    fontSize: '18px',
-                    fill: '#fff'
-                }).setOrigin(0.5);
-                
-                // Permitir reiniciar
-                this.enableRestart();
+                // Luego cae al suelo
+                this.scene.tweens.add({
+                    targets: this.sprite,
+                    y: this.sprite.y + 80, // Cae más abajo que la posición original
+                    duration: 500,
+                    ease: 'Bounce.Out',
+                    onComplete: () => {
+                        // Crear múltiples manchas de sangre donde cayó el jugador
+                        this.createBloodSplatter(this.sprite.x, this.sprite.y);
+                        
+                        // Mensaje de game over
+                        this.scene.add.text(400, 300, '¡ELIMINADO!', {
+                            fontSize: '48px',
+                            fill: '#ff0000',
+                            stroke: '#000000',
+                            strokeThickness: 4,
+                            shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 5, stroke: true, fill: true }
+                        }).setOrigin(0.5);
+                        
+                        this.scene.add.text(400, 350, 'Presiona R para reiniciar', {
+                            fontSize: '18px',
+                            fill: '#fff'
+                        }).setOrigin(0.5);
+                        
+                        // Permitir reiniciar
+                        this.enableRestart();
+                    }
+                });
             }
         });
+    }
+    
+    /**
+     * Crea un efecto de salpicadura de sangre
+     * @param {number} x - Posición X 
+     * @param {number} y - Posición Y
+     */
+    createBloodSplatter(x, y) {
+        // Mancha principal
+        this.scene.add.circle(x, y + 15, 20, 0xff0000, 0.8);
+        
+        // Manchas más pequeñas alrededor
+        for (let i = 0; i < 5; i++) {
+            const offsetX = Phaser.Math.Between(-30, 30);
+            const offsetY = Phaser.Math.Between(-10, 20);
+            const size = Phaser.Math.Between(5, 10);
+            const alpha = Phaser.Math.FloatBetween(0.4, 0.7);
+            
+            this.scene.add.circle(x + offsetX, y + 15 + offsetY, size, 0xff0000, alpha);
+        }
     }
     
     /**

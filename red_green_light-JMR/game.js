@@ -1,3 +1,13 @@
+/**
+ * AVISO IMPORTANTE:
+ * =================
+ * Este archivo es OBSOLETO y ha sido reemplazado por la estructura modular en la carpeta 'js/'.
+ * Por favor, utiliza el archivo index.html para acceder a la versión actualizada del juego.
+ * 
+ * Sin embargo, por si alguien carga este archivo directamente, hemos modificado la velocidad
+ * para que el pingüino vaya más lento y tarde al menos 1 minuto en llegar al otro lado.
+ */
+
 // Configuración del juego
 const config = {
     type: Phaser.AUTO,
@@ -35,10 +45,10 @@ let spaceBar;
 let isMoving = false;
 let gameState = 'waiting'; // 'waiting', 'moving', 'paused', 'balancing', 'finished', 'dead'
 let playerSpeed = 0;
-let maxSpeed = 300;
-let acceleration = 5;
-let deceleration = 3; // Nueva variable para la desaceleración
-let minSpeedThreshold = 5; // Umbral mínimo de velocidad para considerarse "detenido"
+let maxSpeed = 10; // Reducido desde 300 para que tarde al menos 1 minuto
+let acceleration = 0.2; // Reducido desde 5 para una aceleración más gradual
+let deceleration = 0.3; // Reducido para una desaceleración gradual
+let minSpeedThreshold = 0.5; // Reducido para un umbral menor de detención
 let lightTimer;
 let greenLightMusic; // Variable para la música cuando el semáforo está verde
 

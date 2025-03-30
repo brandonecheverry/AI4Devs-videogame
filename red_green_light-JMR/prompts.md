@@ -149,3 +149,22 @@ game.js:252 TECLA ESPACIO PRESIONADA - EVENTO TECLADO
 Crear clase Player
 Encapsular toda la lógica del jugador en una clase
 Incluir métodos para mover, detener y eliminar al jugador
+
+21) Genera un plan detallado para Cambia el Player y que pase del circulo, el pinguino de los sprites.
+Incluye en tu plan la interpretacion de como generar la animacion con los archivos
+
+22) si
+
+23) Si, quiero que cuando el usuario no oprima el teclado el pinguino este estatico parado, actualmente se pone en posicion de slide
+
+24) Ya no esta implementado el pinguino, volvio el circulo!
+
+25) Editemos el Juego para que el pinguino vaya mucho mas lento, a maxima velocidad tiene que tardarse al menos 1 minuto en llegar al otro lado.
+
+26) Editemos el Juego para que el pinguino vaya mucho mas lento, a maxima velocidad tiene que tardarse al menos 1 minuto en llegar al otro lado.
+
+27) Ayudame a mejorar el efecto visual cuando el pinguino muere, quiero que se haga un efecto de sonido de pistola assets/audio/pistol.mp3
+, quiero que se reproduzca en el momento que el pinguino muera
+tambien quiero que salte y que la sangre quede en el suelo, tambien cuando muere se acaba su inercia y queda queto en el lugar
+
+28) 
