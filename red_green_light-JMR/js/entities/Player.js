@@ -154,9 +154,16 @@ class Player {
         this.speed = 0;
         this.sprite.setVelocity(0);
         
-        // Reproducir efecto de sonido de pistola
-        if (this.scene.cache.audio.exists('pistol')) {
-            this.scene.sound.play('pistol', { volume: 0.5 });
+        // Reproducir sonido de pistola usando el sistema global
+        if (this.scene.pistolSound) {
+            try {
+                this.scene.pistolSound.play();
+                console.log("🔊 Reproduciendo sonido de pistola");
+            } catch (error) {
+                console.error("⚠️ Error al reproducir sonido de pistola:", error);
+            }
+        } else {
+            console.warn("⚠️ Sonido de pistola no disponible");
         }
         
         // Reproducir la animación de muerte
@@ -176,8 +183,30 @@ class Player {
                     duration: 500,
                     ease: 'Bounce.Out',
                     onComplete: () => {
-                        // Crear múltiples manchas de sangre donde cayó el jugador
-                        this.createBloodSplatter(this.sprite.x, this.sprite.y);
+                        // Activar el sistema de partículas en la posición del jugador
+                        if (this.scene.bloodEmitter) {
+                            // Usar emitParticleAt en lugar de explode
+                            this.scene.bloodEmitter.setPosition(this.sprite.x, this.sprite.y);
+                            // Emitir varias partículas de una vez
+                            for (let i = 0; i < 50; i++) {
+                                this.scene.bloodEmitter.emitParticleAt(
+                                    this.sprite.x + Phaser.Math.Between(-10, 10),
+                                    this.sprite.y + Phaser.Math.Between(-10, 10)
+                                );
+                            }
+                            console.log("💥 Partículas de sangre emitidas");
+                        }
+                        
+                        // Crear mancha de sangre permanente en el suelo
+                        if (this.scene.textures.exists('blood_puddle')) {
+                            const bloodPuddle = this.scene.add.image(this.sprite.x, this.sprite.y + 20, 'blood_puddle')
+                                .setOrigin(0.5, 0.5)
+                                .setScale(0.8)
+                                .setAlpha(0.9)
+                                .setDepth(this.sprite.depth - 1);
+                            
+                            console.log("🩸 Mancha de sangre creada");
+                        }
                         
                         // Mensaje de game over
                         this.scene.add.text(400, 300, '¡ELIMINADO!', {
@@ -199,26 +228,6 @@ class Player {
                 });
             }
         });
-    }
-    
-    /**
-     * Crea un efecto de salpicadura de sangre
-     * @param {number} x - Posición X 
-     * @param {number} y - Posición Y
-     */
-    createBloodSplatter(x, y) {
-        // Mancha principal
-        this.scene.add.circle(x, y + 15, 20, 0xff0000, 0.8);
-        
-        // Manchas más pequeñas alrededor
-        for (let i = 0; i < 5; i++) {
-            const offsetX = Phaser.Math.Between(-30, 30);
-            const offsetY = Phaser.Math.Between(-10, 20);
-            const size = Phaser.Math.Between(5, 10);
-            const alpha = Phaser.Math.FloatBetween(0.4, 0.7);
-            
-            this.scene.add.circle(x + offsetX, y + 15 + offsetY, size, 0xff0000, alpha);
-        }
     }
     
     /**

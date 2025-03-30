@@ -25,6 +25,10 @@ class GameScene extends Phaser.Scene {
         // Cargar el sonido de la pistola para la muerte del pingüino
         this.load.audio('pistol', 'assets/audio/pistol.mp3');
         
+        // Generar imágenes dinámicamente para el efecto de sangre
+        this.generateBloodParticle();
+        this.generateBloodPuddle();
+        
         // Cargar sprites del pingüino
         this.load.image('penguin_walk1', 'assets/sprites/penguin_walk01.png');
         this.load.image('penguin_walk2', 'assets/sprites/penguin_walk02.png');
@@ -40,6 +44,67 @@ class GameScene extends Phaser.Scene {
         this.load.image('penguin_die4', 'assets/sprites/penguin_die04.png');
         
         this.load.image('penguin_hurt', 'assets/sprites/penguin_hurt.png');
+    }
+
+    /**
+     * Genera una imagen de partícula de sangre dinámicamente
+     */
+    generateBloodParticle() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 8;
+        canvas.height = 8;
+        const ctx = canvas.getContext('2d');
+        
+        // Fondo transparente
+        ctx.clearRect(0, 0, 8, 8);
+        
+        // Dibujar partícula como círculo blanco
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(4, 4, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Cargar en Phaser
+        this.textures.addCanvas('blood_particle', canvas);
+        console.log("✅ Partícula de sangre generada dinámicamente");
+    }
+    
+    /**
+     * Genera una imagen de mancha de sangre dinámicamente
+     */
+    generateBloodPuddle() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Fondo transparente
+        ctx.clearRect(0, 0, 64, 32);
+        
+        // Dibujar mancha principal
+        ctx.fillStyle = 'rgba(200, 0, 0, 0.7)';
+        ctx.beginPath();
+        ctx.moveTo(10, 16);
+        ctx.bezierCurveTo(15, 5, 30, 8, 35, 16);
+        ctx.bezierCurveTo(50, 18, 55, 25, 45, 28);
+        ctx.bezierCurveTo(35, 30, 15, 30, 10, 16);
+        ctx.fill();
+        
+        // Añadir detalles más oscuros para dar profundidad
+        ctx.fillStyle = 'rgba(150, 0, 0, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(30, 18, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Añadir detalles más claros para dar textura
+        ctx.fillStyle = 'rgba(220, 0, 0, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(25, 15, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Cargar en Phaser
+        this.textures.addCanvas('blood_puddle', canvas);
+        console.log("✅ Mancha de sangre generada dinámicamente");
     }
 
     create() {
@@ -70,6 +135,9 @@ class GameScene extends Phaser.Scene {
         
         // Configurar audio
         this.setupAudio();
+        
+        // Configurar sistema de partículas para el efecto de sangre
+        this.setupBloodEffects();
         
         // Iniciar el semáforo
         this.trafficLight.start();
@@ -280,6 +348,31 @@ class GameScene extends Phaser.Scene {
             console.warn('Audio "greenLight" no encontrado en caché');
             this.greenLightMusic = null;
         }
+    }
+    
+    /**
+     * Configura el sistema de partículas para efectos de sangre
+     */
+    setupBloodEffects() {
+        // Sonido de pistola
+        this.pistolSound = this.sound.add('pistol', { volume: 0.5 });
+        
+        // Configurar el emisor de partículas
+        this.bloodEmitter = this.add.particles('blood_particle').createEmitter({
+            x: 0,
+            y: 0,
+            speed: { min: 100, max: 300 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.6, end: 0.1 },
+            lifespan: 800,
+            gravityY: 600,
+            blendMode: 'ADD',
+            tint: 0xff0000,
+            quantity: 1,
+            on: false  // No emitir partículas automáticamente
+        });
+        
+        console.log("✅ Sistema de partículas de sangre configurado");
     }
     
     /**

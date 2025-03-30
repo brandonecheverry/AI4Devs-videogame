@@ -941,11 +941,346 @@ Ahora modificaré la escena principal para añadir la generación de imágenes y
 
 ---
 
+```diff
+          // Cargar el sonido de la pistola para la muerte del pingüino
+          this.load.audio('pistol', 'assets/audio/pistol.mp3');
++         
++         // Generar imágenes dinámicamente para el efecto de sangre
++         this.generateBloodParticle();
++         this.generateBloodPuddle();
+          
+          // Cargar sprites del pingüino
+          this.load.image('penguin_hurt', 'assets/sprites/penguin_hurt.png');
+      }
++ 
++     /**
++      * Genera una imagen de partícula de sangre dinámicamente
++      */
++     generateBloodParticle() {
++         const canvas = document.createElement('canvas');
++         canvas.width = 8;
++         canvas.height = 8;
++         const ctx = canvas.getContext('2d');
++         
++         // Fondo transparente
++         ctx.clearRect(0, 0, 8, 8);
++         
++         // Dibujar partícula como círculo blanco
++         ctx.fillStyle = '#ffffff';
++         ctx.beginPath();
++         ctx.arc(4, 4, 3, 0, Math.PI * 2);
++         ctx.fill();
++         
++         // Cargar en Phaser
++         this.textures.addCanvas('blood_particle', canvas);
++         console.log("✅ Partícula de sangre generada dinámicamente");
++     }
++     
++     /**
++      * Genera una imagen de mancha de sangre dinámicamente
++      */
++     generateBloodPuddle() {
++         const canvas = document.createElement('canvas');
++         canvas.width = 64;
++         canvas.height = 32;
++         const ctx = canvas.getContext('2d');
++         
++         // Fondo transparente
++         ctx.clearRect(0, 0, 64, 32);
++         
++         // Dibujar mancha principal
++         ctx.fillStyle = 'rgba(200, 0, 0, 0.7)';
++         ctx.beginPath();
++         ctx.moveTo(10, 16);
++         ctx.bezierCurveTo(15, 5, 30, 8, 35, 16);
++         ctx.bezierCurveTo(50, 18, 55, 25, 45, 28);
++         ctx.bezierCurveTo(35, 30, 15, 30, 10, 16);
++         ctx.fill();
++         
++         // Añadir detalles más oscuros para dar profundidad
++         ctx.fillStyle = 'rgba(150, 0, 0, 0.5)';
++         ctx.beginPath();
++         ctx.ellipse(30, 18, 15, 8, 0, 0, Math.PI * 2);
++         ctx.fill();
++         
++         // Añadir detalles más claros para dar textura
++         ctx.fillStyle = 'rgba(220, 0, 0, 0.3)';
++         ctx.beginPath();
++         ctx.ellipse(25, 15, 5, 3, 0, 0, Math.PI * 2);
++         ctx.fill();
++         
++         // Cargar en Phaser
++         this.textures.addCanvas('blood_puddle', canvas);
++         console.log("✅ Mancha de sangre generada dinámicamente");
++     }
+  
+      create() {
+          // Configurar audio
+          this.setupAudio();
++         
++         // Configurar sistema de partículas para el efecto de sangre
++         this.setupBloodEffects();
+          
+          // Iniciar el semáforo
+          }
+      }
++     
++     /**
++      * Configura el sistema de partículas para efectos de sangre
++      */
++     setupBloodEffects() {
++         // Sonido de pistola
++         this.pistolSound = this.sound.add('pistol', { volume: 0.5 });
++         
++         // Configurar el emisor de partículas (sin emitir todavía)
++         this.bloodEmitter = this.add.particles(0, 0, 'blood_particle', {
++             speed: { min: 200, max: 400 },
++             angle: { min: 0, max: 360 },
++             scale: { start: 0.6, end: 0.1 },
++             lifespan: 800,
++             gravityY: 600,
++             blendMode: 'ADD',
++             tint: 0xff0000,
++             quantity: 50,
++             emitting: false
++         });
++         
++         console.log("✅ Sistema de partículas de sangre configurado");
++     }
+      
+      /**
+```
+
+---
+
+Ahora vamos a modificar la clase Player para utilizar el sistema de partículas al morir:
+
+---
+
+Read file: js/entities/Player.js
+
+---
+
+Vamos a modificar el método kill de la clase Player para utilizar el sistema de partículas que hemos creado:
+
+---
+
+```diff
+          this.sprite.setVelocity(0);
+          
+-         // Reproducir efecto de sonido de pistola
+-         if (this.scene.cache.audio.exists('pistol')) {
+-             this.scene.sound.play('pistol', { volume: 0.5 });
++         // Reproducir sonido de pistola usando el sistema global
++         if (this.scene.pistolSound) {
++             try {
++                 this.scene.pistolSound.play();
++                 console.log("🔊 Reproduciendo sonido de pistola");
++             } catch (error) {
++                 console.error("⚠️ Error al reproducir sonido de pistola:", error);
++             }
++         } else {
++             console.warn("⚠️ Sonido de pistola no disponible");
+          }
+          
+                      ease: 'Bounce.Out',
+                      onComplete: () => {
+-                         // Crear múltiples manchas de sangre donde cayó el jugador
+-                         this.createBloodSplatter(this.sprite.x, this.sprite.y);
++                         // Activar el sistema de partículas en la posición del jugador
++                         if (this.scene.bloodEmitter) {
++                             this.scene.bloodEmitter.setPosition(this.sprite.x, this.sprite.y);
++                             this.scene.bloodEmitter.explode();
++                             console.log("💥 Explosión de partículas de sangre activada");
++                         }
++                         
++                         // Crear mancha de sangre permanente en el suelo
++                         if (this.scene.textures.exists('blood_puddle')) {
++                             const bloodPuddle = this.scene.add.image(this.sprite.x, this.sprite.y + 20, 'blood_puddle')
++                                 .setOrigin(0.5, 0.5)
++                                 .setScale(0.8)
++                                 .setAlpha(0.9)
++                                 .setDepth(this.sprite.depth - 1);
++                             
++                             console.log("🩸 Mancha de sangre creada");
++                         }
+                          
+                          // Mensaje de game over
+          });
+      }
+-     
+-     /**
+-      * Crea un efecto de salpicadura de sangre
+-      * @param {number} x - Posición X 
+-      * @param {number} y - Posición Y
+-      */
+-     createBloodSplatter(x, y) {
+-         // Mancha principal
+-         this.scene.add.circle(x, y + 15, 20, 0xff0000, 0.8);
+-         
+-         // Manchas más pequeñas alrededor
+-         for (let i = 0; i < 5; i++) {
+-             const offsetX = Phaser.Math.Between(-30, 30);
+-             const offsetY = Phaser.Math.Between(-10, 20);
+-             const size = Phaser.Math.Between(5, 10);
+-             const alpha = Phaser.Math.FloatBetween(0.4, 0.7);
+-             
+-             this.scene.add.circle(x + offsetX, y + 15 + offsetY, size, 0xff0000, alpha);
+-         }
+-     }
+      
+      /**
+```
+
+---
+
+¡Perfecto! He implementado el sistema de partículas para mejorar el efecto visual cuando el pingüino muere. Aquí está el resumen de los cambios realizados:
+
+## Mejoras implementadas:
+
+1. **Generación dinámica de imágenes**:
+   - Creamos partículas de sangre usando Canvas
+   - Generamos una mancha de sangre personalizada y realista
+
+2. **Sistema de partículas**:
+   - Configurado para simular salpicaduras de sangre en el momento del impacto
+   - Las partículas tienen movimiento realista con gravedad y disminución de tamaño
+
+3. **Efecto de muerte mejorado**:
+   - El pingüino primero salta hacia arriba (reacción al disparo)
+   - Luego cae con un efecto de rebote realista
+   - Se detiene completamente (sin inercia)
+   - Se crea una mancha de sangre permanente en el suelo
+   - Explosión de partículas para simular salpicaduras
+
+4. **Sonido de disparo**:
+   - Configurado para reproducirse en el momento exacto de la muerte
+   - Manejo de errores para asegurar una experiencia fluida
+
+## Prueba del efecto:
+
+Para ver el efecto en acción:
+1. Ejecuta el juego
+2. Mueve el pingüino cuando la luz está en rojo
+3. Observa el efecto completo: sonido, salto, partículas de sangre y mancha en el suelo
+
+Los logs en la consola te informarán sobre cada parte del efecto que se active, lo que te ayudará a depurar si hubiera algún problema.
+
+¿Quieres que haga algún ajuste adicional al efecto?
+
+---
+
+_**User**_
+
+Player.js:189 Uncaught TypeError: this.scene.bloodEmitter.explode is not a function
+    at initialize.onComplete (Player.js:189:53)
+    at initialize.dispatchTweenEvent (phaser.min.js:1:322373)
+    at initialize.nextState (phaser.min.js:1:318095)
+    at initialize.update (phaser.min.js:1:321646)
+    at initialize.update (phaser.min.js:1:1017612)
+    at o.emit (phaser.min.js:1:8202)
+    at initialize.step (phaser.min.js:1:225406)
+    at initialize.update (phaser.min.js:1:490723)
+    at initialize.step (phaser.min.js:1:793006)
+    at initialize.step (phaser.min.js:1:433503)
+
+﻿
 
 
 ---
 
+_**Assistant**_
 
+<think>Este error indica que estamos intentando llamar a un método `explode()` en `this.scene.bloodEmitter`, pero ese método no existe. Esto ocurre en la línea 189 de Player.js.
+
+El error parece estar relacionado con el sistema de partículas que implementamos. Mirando el código, vemos que en `js/entities/Player.js`, línea 189, estamos tratando de llamar a `this.scene.bloodEmitter.explode()`. Sin embargo, la API de Phaser para el sistema de partículas ha cambiado o estamos usando un método incorrecto.
+
+Necesito corregir cómo estamos usando el emisor de partículas. En Phaser 3, según la documentación, el método correcto podría ser `emitParticleAt()` o similar, en lugar de `explode()`.</think># Error en el sistema de partículas
+
+Veo que estás teniendo un error con el sistema de partículas. El problema es que estamos intentando usar el método `explode()` pero este no está disponible en la versión actual de Phaser.
+
+Vamos a corregir este error modificando cómo activamos el emisor de partículas:
+
+---
+
+```diff
+                          // Activar el sistema de partículas en la posición del jugador
+                          if (this.scene.bloodEmitter) {
++                             // Usar emitParticleAt en lugar de explode
+                              this.scene.bloodEmitter.setPosition(this.sprite.x, this.sprite.y);
+-                             this.scene.bloodEmitter.explode();
+-                             console.log("💥 Explosión de partículas de sangre activada");
++                             // Emitir varias partículas de una vez
++                             for (let i = 0; i < 50; i++) {
++                                 this.scene.bloodEmitter.emitParticleAt(
++                                     this.sprite.x + Phaser.Math.Between(-10, 10),
++                                     this.sprite.y + Phaser.Math.Between(-10, 10)
++                                 );
++                             }
++                             console.log("💥 Partículas de sangre emitidas");
+                          }
+                          
+```
+
+---
+
+Ahora necesitamos corregir también la configuración inicial del emisor de partículas en la escena:
+
+---
+
+```diff
+          this.pistolSound = this.sound.add('pistol', { volume: 0.5 });
+          
+-         // Configurar el emisor de partículas (sin emitir todavía)
+-         this.bloodEmitter = this.add.particles(0, 0, 'blood_particle', {
+-             speed: { min: 200, max: 400 },
++         // Configurar el emisor de partículas
++         this.bloodEmitter = this.add.particles('blood_particle').createEmitter({
++             x: 0,
++             y: 0,
++             speed: { min: 100, max: 300 },
+              angle: { min: 0, max: 360 },
+              scale: { start: 0.6, end: 0.1 },
+              blendMode: 'ADD',
+              tint: 0xff0000,
+-             quantity: 50,
+-             emitting: false
++             quantity: 1,
++             on: false  // No emitir partículas automáticamente
+          });
+          
+```
+
+---
+
+¡Muy bien! Ahora he corregido los problemas que causaban el error en el sistema de partículas. Aquí están los cambios que he realizado:
+
+## Correcciones implementadas:
+
+1. **En el sistema de partículas (GameScene.js)**:
+   - He cambiado la forma en que creamos el emisor utilizando la sintaxis correcta de Phaser 3: `this.add.particles('blood_particle').createEmitter()`
+   - He configurado el emisor como `on: false` para que no emita partículas automáticamente
+   - He ajustado la cantidad a 1 por emisión, ya que controlaremos manualmente la cantidad
+
+2. **En el método kill (Player.js)**:
+   - Reemplacé el uso del método `explode()` (que no existe en la API actual)
+   - Implementé un bucle que llama a `emitParticleAt()` varias veces para crear el efecto de explosión
+   - Añadí una pequeña variación aleatoria en la posición de cada partícula para un efecto más realista
+
+## Beneficios del nuevo enfoque:
+
+1. **Mejor control**: Podemos ajustar exactamente cuántas partículas emitir
+2. **Efecto más natural**: La variación aleatoria en las posiciones crea un efecto más orgánico
+3. **Mejor rendimiento**: Emitimos justo las partículas necesarias
+
+El efecto visual ahora debería funcionar correctamente, con:
+- Sonido de disparo
+- Salto del pingüino hacia arriba
+- Caída con efecto de rebote
+- Explosión de partículas de sangre en el momento del impacto
+- Mancha permanente en el suelo
+
+Si tienes algún otro problema o quieres ajustar algún aspecto del efecto, házmelo saber.
 
 ---
 

@@ -167,4 +167,24 @@ Incluye en tu plan la interpretacion de como generar la animacion con los archiv
 , quiero que se reproduzca en el momento que el pinguino muera
 tambien quiero que salte y que la sangre quede en el suelo, tambien cuando muere se acaba su inercia y queda queto en el lugar
 
-28) 
+28) Existe alguna libreria que pueda simular el efecto de la sangre?
+
+29) Implementemos Particle Systems de Phaser
+
+30) Si, ayudame a crear las imagenes
+
+31) 3. Alternativa completa: Generación dinámica de las imágenes
+
+32) Player.js:189 Uncaught TypeError: this.scene.bloodEmitter.explode is not a function
+    at initialize.onComplete (Player.js:189:53)
+    at initialize.dispatchTweenEvent (phaser.min.js:1:322373)
+    at initialize.nextState (phaser.min.js:1:318095)
+    at initialize.update (phaser.min.js:1:321646)
+    at initialize.update (phaser.min.js:1:1017612)
+    at o.emit (phaser.min.js:1:8202)
+    at initialize.step (phaser.min.js:1:225406)
+    at initialize.update (phaser.min.js:1:490723)
+    at initialize.step (phaser.min.js:1:793006)
+    at initialize.step (phaser.min.js:1:433503)
+
+﻿
