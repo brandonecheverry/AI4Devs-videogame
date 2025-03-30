@@ -96,5 +96,5 @@ Haz los siguientes ajustes:
  - El nivel debe aparecer en el círculo del centro del tablero, como un contador numérico rojo
  - El botón "Empezar" no debe solaparse con el tablero 
 ___
-#Prompt 10
+# Prompt 10
 cuando el usuario falle, quiero que suene un sonido estridente paracido al de un error
