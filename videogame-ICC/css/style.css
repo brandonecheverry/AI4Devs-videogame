@@ -4,6 +4,10 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Arial', sans-serif;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none; /* For IE/Edge */
 }
 
 body {
@@ -101,6 +105,7 @@ button:active {
     width: 100%;
     max-width: 500px;
     height: 500px;
+    touch-action: none; /* Disable default touch actions */
 }
 
 .letter-tile {
@@ -114,11 +119,13 @@ button:active {
     position: relative;
     transition: all 0.2s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    touch-action: none; /* Disable default touch actions */
 }
 
 .letter-tile.selected {
     transform: scale(0.95);
     box-shadow: 0 0 10px #f9d423, 0 0 20px #f9d423;
+    z-index: 10; /* Ensure selected tiles appear above others */
 }
 
 .letter-tile.hint {
@@ -373,4 +380,9 @@ button:active {
         flex-direction: column;
         gap: 10px;
     }
+}
+
+/* Prevent cursor changing to text selection during dragging */
+.game-board.selecting {
+    cursor: grabbing;
 } 

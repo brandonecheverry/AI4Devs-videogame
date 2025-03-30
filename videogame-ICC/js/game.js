@@ -171,6 +171,17 @@ class GameBoard {
         this.boardElement.addEventListener('mouseover', this.handleTileMouseOver.bind(this));
         document.addEventListener('mouseup', this.handleMouseUp.bind(this));
         
+        // Prevent text selection during drag
+        this.boardElement.addEventListener('dragstart', e => e.preventDefault());
+        
+        // Cancel selection if mouse leaves game board during drag
+        this.boardElement.addEventListener('mouseleave', () => {
+            if (this.selectedTiles.length > 0) {
+                this.clearSelection();
+                this.boardElement.classList.remove('selecting');
+            }
+        });
+        
         // Touch events for mobile
         this.boardElement.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.boardElement.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
@@ -178,13 +189,21 @@ class GameBoard {
     }
 
     handleTileMouseDown(event) {
+        // Prevent default browser selection behavior
+        event.preventDefault();
+        
         const tile = this.getTileFromEvent(event);
         if (tile) {
+            // Add selecting class to change cursor
+            this.boardElement.classList.add('selecting');
             this.startWordSelection(tile);
         }
     }
 
     handleTileMouseOver(event) {
+        // Prevent default browser selection behavior
+        event.preventDefault();
+        
         if (this.selectedTiles.length === 0) return;
         
         const tile = this.getTileFromEvent(event);
@@ -197,7 +216,15 @@ class GameBoard {
         }
     }
 
-    handleMouseUp() {
+    handleMouseUp(event) {
+        // Prevent default browser selection behavior
+        if (event) {
+            event.preventDefault();
+        }
+        
+        // Remove selecting class when done
+        this.boardElement.classList.remove('selecting');
+        
         if (this.selectedTiles.length > 0) {
             this.validateSelectedWord();
         }
@@ -208,6 +235,8 @@ class GameBoard {
         const touch = event.touches[0];
         const tile = this.getTileFromTouch(touch);
         if (tile) {
+            // Add selecting class for touch devices
+            this.boardElement.classList.add('selecting');
             this.startWordSelection(tile);
         }
     }
@@ -228,6 +257,10 @@ class GameBoard {
 
     handleTouchEnd(event) {
         event.preventDefault();
+        
+        // Remove selecting class when touch ends
+        this.boardElement.classList.remove('selecting');
+        
         if (this.selectedTiles.length > 0) {
             this.validateSelectedWord();
         }

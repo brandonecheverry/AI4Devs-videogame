@@ -63,3 +63,6 @@ remove sumbit word functionality
 
 **Prompt 6**
 Improve hint letter animation and maintain the animation 3 seconds
+
+**Prompt 7**
+Improve dragging effect to prevent selecting text.
