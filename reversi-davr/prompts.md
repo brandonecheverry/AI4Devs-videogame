@@ -32,3 +32,8 @@ Add an option to play on a 6x6 or 10x10 board.  This option should only be avail
 
 Don't display the board until the user has selected a size, and once they have selected a size, hide the size selector.
 
+## Prompt 8
+
+Make forfeital more visible. Instead of showing it in the text below the board, show a popup over the board, blocking gameplay until it has been acknowlegded.
+
+## Prompt 9

@@ -2,6 +2,7 @@ class ReversiGame {
     constructor() {
         this.boardSize = null;
         this.setupSizeSelector();
+        this.setupForfeitModal();
     }
 
     setupSizeSelector() {
@@ -15,6 +16,22 @@ class ReversiGame {
                 this.initializeGame();
             });
         });
+    }
+
+    setupForfeitModal() {
+        document.getElementById('acknowledge-forfeit').addEventListener('click', () => {
+            document.getElementById('forfeit-modal').classList.add('hidden');
+            this.resumeAfterForfeit();
+        });
+    }
+
+    showForfeitModal(message) {
+        document.getElementById('forfeit-message').textContent = message;
+        document.getElementById('forfeit-modal').classList.remove('hidden');
+    }
+
+    resumeAfterForfeit() {
+        this.updateStatus(`Current player: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`);
     }
 
     isGameStarted() {
@@ -204,7 +221,7 @@ class ReversiGame {
         if (!this.hasValidMoves()) {
             const currentPlayerCapitalized = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
             const nextPlayer = this.currentPlayer === 'black' ? 'White' : 'Black';
-            this.updateStatus(`No valid moves for ${currentPlayerCapitalized}! ${currentPlayerCapitalized} forfeits their turn. Next move: ${nextPlayer}`);
+            this.showForfeitModal(`No valid moves for ${currentPlayerCapitalized}! ${currentPlayerCapitalized} forfeits their turn. Next move: ${nextPlayer}`);
             this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
         } else {
             this.updateStatus(`Current player: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`);
