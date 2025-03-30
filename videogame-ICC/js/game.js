@@ -473,11 +473,13 @@ class Game {
             const firstLetter = randomWord.path[0];
             const tile = this.board.grid[firstLetter.row][firstLetter.col];
             
-            // Visual hint
-            tile.element.classList.add('hint');
+            // Visual hint - enhanced animation
+            tile.element.classList.add('hint-active');
+            
+            // Keep the animation active for 3 seconds
             setTimeout(() => {
-                tile.element.classList.remove('hint');
-            }, 1500);
+                tile.element.classList.remove('hint-active');
+            }, 3000);
             
             // Reduce hints
             this.hintsRemaining--;

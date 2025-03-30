@@ -125,6 +125,44 @@ button:active {
     animation: pulse 1.5s ease-in-out;
 }
 
+.letter-tile.hint-active {
+    animation: hint-pulse 3s ease-in-out;
+    z-index: 10;
+}
+
+@keyframes hint-pulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7);
+        background-color: #f9d423;
+    }
+    15% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 15px 5px rgba(249, 212, 35, 0.8);
+    }
+    30% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7);
+    }
+    45% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 15px 5px rgba(249, 212, 35, 0.8);
+    }
+    60% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7);
+    }
+    75% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 15px 5px rgba(249, 212, 35, 0.8);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7);
+        background-color: inherit;
+    }
+}
+
 @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7); }
     70% { box-shadow: 0 0 0 15px rgba(249, 212, 35, 0); }

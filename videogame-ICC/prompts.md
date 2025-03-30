@@ -60,3 +60,6 @@ Can you add this information in help section ?
 
 **Prompt 5**
 remove sumbit word functionality
+
+**Prompt 6**
+Improve hint letter animation and maintain the animation 3 seconds
