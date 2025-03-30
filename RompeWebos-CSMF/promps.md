@@ -42,3 +42,7 @@ Un par de ajustes más:
 - Coloca el botón reiniciar a la derecha de los botones de dificultad, separado de ellos por una barra vertical
 - Dale a los botones un estilo atractivo y moderno
 - Una vez que se pierde, ya no se puede seguir onteractuando con el teclado
+
+**Prompt 8**
+
+Cuando termina la partida no se están viendo las celdas marcadas, solo las marcadas erróneamente.

@@ -69,13 +69,12 @@ function renderBoard() {
                 } else {
                     cellDiv.textContent = cell.count > 0 ? cell.count : "";
                 }
-            } else if (cell.flagged) {
+            }
+            if (cell.flagged) {
                 cellDiv.classList.add("flagged");
                 cellDiv.textContent = "🐣"; // Correctly flagged cells
                 if (cell.misflagged) {
                     cellDiv.classList.add("misflagged"); // Incorrectly flagged cells
-                } else {
-                    cellDiv.textContent = "🐣"; // Correctly flagged cells
                 }
             }
             cellDiv.onclick = () => revealCell(r, c);
@@ -128,6 +127,8 @@ function revealAll(clickedRow, clickedCol) {
             }
         } else if (cell.flagged && !cell.webo) {
             cell.misflagged = true; // Mark incorrectly flagged cells
+        } else if (cell.flagged && cell.webo) {
+            cell.revealed = true; // Ensure correctly flagged cells remain visible
         }
     }));
     renderBoard();
