@@ -18,9 +18,17 @@ The game works pretty well, but when I reach a situation where the current playe
 
 @workspace Great. Now handle the case where neither player has any valid moves.
 
-_This prompt was rejected, or rather, the response was "filtered by the Responsible AI Service".
+_This prompt was rejected, or rather, the response was "filtered by the Responsible AI Service"._
 
 ## Prompt 5
 
 Next case: if neither player has any valid moves, the game is over.
+
+## Prompt 6
+
+Add an option to play on a 6x6 or 10x10 board.  This option should only be available when the game starts, i.e. before any pieces have been played.
+
+## Prompt 7
+
+Don't display the board until the user has selected a size, and once they have selected a size, hide the size selector.
 

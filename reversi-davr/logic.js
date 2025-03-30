@@ -1,23 +1,66 @@
 class ReversiGame {
     constructor() {
-        this.board = Array(8).fill().map(() => Array(8).fill(null));
-        this.currentPlayer = 'black'; // black goes first
+        this.boardSize = null;
+        this.setupSizeSelector();
+    }
+
+    setupSizeSelector() {
+        const buttons = document.querySelectorAll('#size-selector button');
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                this.boardSize = parseInt(button.dataset.size);
+                document.getElementById('size-selector').classList.add('hidden');
+                document.getElementById('board').classList.remove('hidden');
+                document.getElementById('status').classList.remove('hidden');
+                this.initializeGame();
+            });
+        });
+    }
+
+    isGameStarted() {
+        if (!this.board) return false;
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col] && 
+                    !(row === Math.floor(this.boardSize/2) - 1 && col === Math.floor(this.boardSize/2) - 1) &&
+                    !(row === Math.floor(this.boardSize/2) - 1 && col === Math.floor(this.boardSize/2)) &&
+                    !(row === Math.floor(this.boardSize/2) && col === Math.floor(this.boardSize/2) - 1) &&
+                    !(row === Math.floor(this.boardSize/2) && col === Math.floor(this.boardSize/2))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    initializeGame() {
+        this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(null));
+        this.currentPlayer = 'black';
         this.initializeBoard();
+        document.getElementById('board').innerHTML = '';
         this.createBoardUI();
+        this.updateStatus(`Current player: Black`);
+        
+        // Disable size buttons if game has started
+        const buttons = document.querySelectorAll('#size-selector button');
+        buttons.forEach(button => {
+            button.disabled = this.isGameStarted();
+        });
     }
 
     initializeBoard() {
-        // Set up initial pieces
-        this.board[3][3] = 'white';
-        this.board[3][4] = 'black';
-        this.board[4][3] = 'black';
-        this.board[4][4] = 'white';
+        const mid = Math.floor(this.boardSize/2);
+        this.board[mid-1][mid-1] = 'white';
+        this.board[mid-1][mid] = 'black';
+        this.board[mid][mid-1] = 'black';
+        this.board[mid][mid] = 'white';
     }
 
     createBoardUI() {
         const boardElement = document.getElementById('board');
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
+        boardElement.style.gridTemplateColumns = `repeat(${this.boardSize}, 1fr)`;
+        for (let i = 0; i < this.boardSize; i++) {
+            for (let j = 0; j < this.boardSize; j++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.dataset.row = i;
@@ -56,7 +99,7 @@ class ReversiGame {
         let curCol = col + dCol;
         
         // Collect potential flips
-        while (curRow >= 0 && curRow < 8 && curCol >= 0 && curCol < 8) {
+        while (curRow >= 0 && curRow < this.boardSize && curCol >= 0 && curCol < this.boardSize) {
             if (!this.board[curRow][curCol]) return [];
             if (this.board[curRow][curCol] === this.currentPlayer) {
                 return flips;
@@ -104,8 +147,8 @@ class ReversiGame {
     }
 
     hasValidMoves() {
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
                 if (this.isValidMove(row, col)) {
                     return true;
                 }
@@ -120,8 +163,8 @@ class ReversiGame {
 
     countPieces() {
         let black = 0, white = 0;
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
                 if (this.board[row][col] === 'black') black++;
                 if (this.board[row][col] === 'white') white++;
             }

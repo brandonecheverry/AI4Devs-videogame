@@ -11,8 +11,9 @@
     gap: 2px;
     background-color: black;
     padding: 2px;
-    width: 400px;
-    height: 400px;
+    width: min(400px, 80vw);
+    height: min(400px, 80vw);
+    aspect-ratio: 1;
 }
 
 .cell {
@@ -43,4 +44,36 @@
 #status {
     margin-top: 20px;
     font-size: 1.2em;
+}
+
+#size-selector {
+    margin-bottom: 20px;
+}
+
+#size-selector button {
+    padding: 8px 16px;
+    margin: 0 5px;
+    cursor: pointer;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background: #fff;
+}
+
+#size-selector button.selected {
+    background: #333;
+    color: #fff;
+}
+
+#size-selector button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#size-selector h2 {
+    text-align: center;
+    margin-bottom: 15px;
 }
