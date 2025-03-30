@@ -176,36 +176,38 @@ class OBJLoader {
     
     switch(type) {
       case 'carrier':
-        shipColor = '#64ffda';
-        shipHeight = 15;
+        shipColor = '#FF5252'; // Rojo
+        shipHeight = 25;
         break;
       case 'battleship':
-        shipColor = '#4cded9';
-        shipHeight = 12;
+        shipColor = '#FFEB3B'; // Amarillo
+        shipHeight = 20;
         break;
       case 'cruiser':
-        shipColor = '#40c9c9';
-        shipHeight = 10;
+        shipColor = '#2196F3'; // Azul
+        shipHeight = 18;
         break;
       case 'submarine':
-        shipColor = '#36b1b1';
-        shipHeight = 8;
+        shipColor = '#4CAF50'; // Verde
+        shipHeight = 16;
         break;
       case 'destroyer':
-        shipColor = '#2a8a8a';
-        shipHeight = 6;
+        shipColor = '#9C27B0'; // Púrpura
+        shipHeight = 14;
         break;
       default:
-        shipColor = '#64ffda';
-        shipHeight = 10;
+        shipColor = '#FFFFFF';
+        shipHeight = 20;
     }
     
     // Creamos el cuerpo principal del barco
     const shipBody = document.createElement('div');
     shipBody.className = 'ship-body';
     
-    const width = isVertical ? '80%' : `${size * 100 - 20}%`;
-    const height = isVertical ? `${size * 100 - 20}%` : '80%';
+    // Calculamos el ancho y alto para que el barco ocupe exactamente las casillas asignadas
+    // El barco debe extenderse exactamente a lo largo de 'size' celdas
+    const width = isVertical ? '80%' : '100%'; 
+    const height = isVertical ? '100%' : '80%';
     
     shipBody.style.position = 'absolute';
     shipBody.style.width = width;
@@ -216,18 +218,7 @@ class OBJLoader {
     shipBody.style.transformStyle = 'preserve-3d';
     shipBody.style.transform = `translateZ(${shipHeight}px)`;
     shipBody.style.borderRadius = '5px';
-    
-    // Añadimos sombra para efecto de profundidad
-    const shadow = document.createElement('div');
-    shadow.className = 'ship-shadow';
-    shadow.style.position = 'absolute';
-    shadow.style.width = width;
-    shadow.style.height = height;
-    shadow.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    shadow.style.left = isVertical ? '15%' : '5%';
-    shadow.style.top = isVertical ? '5%' : '15%';
-    shadow.style.borderRadius = '5px';
-    shadow.style.filter = 'blur(5px)';
+    shipBody.style.border = '2px solid white';
     
     // Elementos de detalle (cabina, cañones, etc.)
     if (size > 2) {
@@ -236,26 +227,52 @@ class OBJLoader {
       cabin.style.position = 'absolute';
       
       if (isVertical) {
+        // Para barcos verticales, la cabina se centra en el ancho
         cabin.style.width = '60%';
-        cabin.style.height = '20%';
+        cabin.style.height = '15%';
         cabin.style.left = '20%';
-        cabin.style.top = '20%';
+        cabin.style.top = '10%';
       } else {
-        cabin.style.width = '20%';
+        // Para barcos horizontales, la cabina se centra en el alto
+        cabin.style.width = '15%';
         cabin.style.height = '60%';
-        cabin.style.left = '20%';
+        cabin.style.left = '10%';
         cabin.style.top = '20%';
       }
       
-      cabin.style.backgroundColor = '#0a192f';
+      cabin.style.backgroundColor = '#000000';
       cabin.style.transform = `translateZ(${shipHeight + 5}px)`;
       cabin.style.borderRadius = '3px';
+      cabin.style.border = '1px solid white';
       
       shipBody.appendChild(cabin);
+      
+      // Añadir un mástil para barcos grandes
+      if (size >= 4) {
+        const mast = document.createElement('div');
+        mast.className = 'ship-mast';
+        mast.style.position = 'absolute';
+        
+        if (isVertical) {
+          mast.style.width = '10%';
+          mast.style.height = '20%';
+          mast.style.left = '45%';
+          mast.style.top = '40%';
+        } else {
+          mast.style.width = '20%';
+          mast.style.height = '10%';
+          mast.style.left = '40%';
+          mast.style.top = '45%';
+        }
+        
+        mast.style.backgroundColor = '#FFFFFF';
+        mast.style.transform = `translateZ(${shipHeight + 10}px)`;
+        
+        shipBody.appendChild(mast);
+      }
     }
     
     // Añadimos todos los elementos al contenedor
-    shipElement.appendChild(shadow);
     shipElement.appendChild(shipBody);
     container.appendChild(shipElement);
   }

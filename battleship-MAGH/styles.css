@@ -86,7 +86,7 @@ h1 {
 
 /* Estilo para la vista isométrica */
 .isometric-board {
-  transform: rotateX(60deg) rotateZ(0deg);
+  transform: rotateX(45deg) rotateZ(0deg);
   transform-style: preserve-3d;
   perspective: 1000px;
   box-shadow: 0 0 30px rgba(100, 255, 218, 0.3);
@@ -94,33 +94,36 @@ h1 {
 
 .cell {
   position: relative;
-  border: 1px solid rgba(100, 255, 218, 0.3);
-  background-color: rgba(10, 25, 47, 0.7);
+  border: 2px solid rgba(100, 255, 218, 0.6);
+  background-color: rgba(10, 25, 47, 0.9);
   cursor: pointer;
   transition: all 0.2s ease;
   transform-style: preserve-3d;
 }
 
 .cell:hover {
-  background-color: rgba(100, 255, 218, 0.2);
+  background-color: rgba(100, 255, 218, 0.4);
 }
 
 /* Estilo para las celdas con barcos */
 .cell.ship {
-  background-color: rgba(100, 255, 218, 0.5);
+  background-color: rgba(100, 255, 218, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .cell.enemy-ship {
-  background-color: rgba(10, 25, 47, 0.7); /* Mismo color que el agua para ocultar */
+  background-color: rgba(10, 25, 47, 0.9); /* Mismo color que el agua para ocultar */
 }
 
 /* Estilo para disparos */
 .cell.hit {
-  background-color: rgba(255, 100, 100, 0.7);
+  background-color: rgba(255, 80, 80, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .cell.miss {
-  background-color: rgba(100, 100, 255, 0.5);
+  background-color: rgba(80, 80, 255, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
 /* Contenedor para modelos 3D de barcos */
@@ -129,7 +132,72 @@ h1 {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transform: translateZ(5px);
+  transform: translateZ(0px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Estilos para barcos 3D */
+.ship-3d-model {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  transform-style: preserve-3d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ship-body {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+/* Etiquetas para identificar barcos */
+.board-container h3 {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.ship-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.legend-color {
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  border: 1px solid white;
+}
+
+.legend-carrier {
+  background-color: #FF5252;
+}
+
+.legend-battleship {
+  background-color: #FFEB3B;
+}
+
+.legend-cruiser {
+  background-color: #2196F3;
+}
+
+.legend-submarine {
+  background-color: #4CAF50;
+}
+
+.legend-destroyer {
+  background-color: #9C27B0;
 }
 
 /* Controles del juego */
@@ -299,23 +367,6 @@ button:active {
   width: 100%;
   height: 100%;
   animation: splash 0.6s forwards;
-}
-
-/* Estilos para barcos 3D */
-.ship-3d-model {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  transform-style: preserve-3d;
-}
-
-.ship-body {
-  position: absolute;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-}
-
-.ship-shadow {
-  filter: blur(5px);
 }
 
 /* Para dispositivos móviles */

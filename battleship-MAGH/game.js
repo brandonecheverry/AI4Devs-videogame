@@ -349,51 +349,6 @@ class BattleshipGame {
       board[cellY][cellX].shipIndex = shipIndex;
     }
     
-    // Crear modelo 3D para el barco (en la UI)
-    const shipContainer = document.createElement('div');
-    shipContainer.className = 'ship-model';
-    
-    // Si hay un archivo OBJ disponible, usarlo; si no, crear representación CSS
-    try {
-      const shipObjPath = `assets/ships/${type}.obj`;
-      
-      // Intentar cargar el modelo OBJ (con manejo de errores)
-      this.objLoader.loadModel(shipObjPath)
-        .then(model => {
-          // Renderizar el modelo 3D
-          const options = {
-            scale: 0.5, 
-            rotationY: isVertical ? 90 : 0
-          };
-          this.objLoader.renderModelAsCSS3D(model, shipContainer, options);
-        })
-        .catch(error => {
-          // Si hay un error, crear representación CSS simple
-          console.error(`Error al cargar modelo ${type}:`, error);
-          this.objLoader.createShipModel(type, size, shipContainer, isVertical);
-        });
-    } catch (e) {
-      // Fallback: crear representación CSS simple
-      this.objLoader.createShipModel(type, size, shipContainer, isVertical);
-    }
-    
-    // Colocar el contenedor en la primera celda
-    const firstCell = document.querySelector(`#player-board .cell[data-x="${x}"][data-y="${y}"]`);
-    
-    // Calcular dimensiones para que el barco ocupe todas sus celdas
-    const cellWidth = firstCell.offsetWidth;
-    const cellHeight = firstCell.offsetHeight;
-    
-    if (isVertical) {
-      shipContainer.style.height = `${cellHeight * size}px`;
-      shipContainer.style.width = `${cellWidth}px`;
-    } else {
-      shipContainer.style.width = `${cellWidth * size}px`;
-      shipContainer.style.height = `${cellHeight}px`;
-    }
-    
-    firstCell.appendChild(shipContainer);
-    
     return true;
   }
   
@@ -498,6 +453,10 @@ class BattleshipGame {
   
   // Actualizar la vista de los tableros
   updateBoardView(hideEnemyShips = false) {
+    // Limpiar contenedores de barcos existentes
+    const shipModels = document.querySelectorAll('.ship-model');
+    shipModels.forEach(model => model.remove());
+
     // Actualizar tablero del jugador
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let x = 0; x < GRID_SIZE; x++) {
@@ -545,6 +504,32 @@ class BattleshipGame {
         }
       }
     }
+
+    // Renderizar modelos 3D de barcos del jugador
+    this.playerShips.forEach(ship => {
+      const [startX, startY] = ship.positions[0];
+      const firstCell = document.querySelector(`#player-board .cell[data-x="${startX}"][data-y="${startY}"]`);
+
+      const shipContainer = document.createElement('div');
+      shipContainer.className = 'ship-model';
+      
+      // Calcular dimensiones exactas para el barco
+      const cellWidth = firstCell.offsetWidth;
+      const cellHeight = firstCell.offsetHeight;
+      
+      if (ship.isVertical) {
+        shipContainer.style.height = `${cellHeight * ship.size}px`;
+        shipContainer.style.width = `${cellWidth}px`;
+      } else {
+        shipContainer.style.width = `${cellWidth * ship.size}px`;
+        shipContainer.style.height = `${cellHeight}px`;
+      }
+      
+      // Crear modelo 3D para el barco
+      this.objLoader.createShipModel(ship.type, ship.size, shipContainer, ship.isVertical);
+      
+      firstCell.appendChild(shipContainer);
+    });
     
     // Actualizar contadores de barcos
     document.getElementById('player-ships-count').textContent = this.countRemainingShips(this.playerShips);
