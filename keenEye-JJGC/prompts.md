@@ -118,3 +118,7 @@ So if I select the image on the position 2 (on the first round) the new image on
 ## Prompt 11
 
 Ok, I don't see the duplicated images anymore and the image selection seems correct. However I still don't see all the images in the next round
+
+## Prompt 20
+
+Improve the confetti animation, I want it to be vissible in all the page!

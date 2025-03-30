@@ -21,7 +21,9 @@ class Game {
     this.startButton = document.getElementById("start-button");
     this.restartButton = document.getElementById("restart-button");
     this.startButton.addEventListener("click", () => this.startGame());
-    this.restartButton.addEventListener("click", () => this.startGame());
+    this.restartButton.addEventListener("click", () =>
+      this.resetAndStartGame()
+    );
 
     // Bind option click handlers
     this.options.forEach((option) => {
@@ -139,6 +141,82 @@ class Game {
 
   updateTimer() {
     this.timerElement.textContent = this.timeLeft;
+
+    // Get the parent element containing both the timer and the "s" for seconds
+    const timerContainer = this.timerElement.parentElement;
+    const secondsText =
+      timerContainer.querySelector("span:not(#timer)") ||
+      timerContainer.childNodes[1];
+
+    // Add warning animation when time is running out (2 seconds or less)
+    if (this.timeLeft <= 2) {
+      // Add the timer-warning class for animation to the timer digit
+      this.timerElement.classList.add("timer-warning");
+
+      // Also make the "s" red if it exists
+      if (secondsText && secondsText.nodeType !== Node.TEXT_NODE) {
+        secondsText.classList.add("timer-warning");
+      } else if (secondsText) {
+        // If it's a text node, we need to wrap it in a span
+        const textContent = secondsText.textContent;
+        const span = document.createElement("span");
+        span.textContent = textContent;
+        span.classList.add("timer-warning");
+        secondsText.replaceWith(span);
+      }
+
+      // Increase animation intensity as time gets closer to zero
+      // The less time remaining, the faster and more intense the animation
+      const animationSpeed =
+        this.timeLeft === 0 ? "0.15s" : this.timeLeft === 1 ? "0.2s" : "0.3s";
+
+      const scale =
+        this.timeLeft === 0 ? "1.3" : this.timeLeft === 1 ? "1.2" : "1.1";
+
+      this.timerElement.style.animationDuration = animationSpeed;
+
+      // Adjust the size dynamically
+      this.timerElement.style.fontSize = `calc(1em * ${scale})`;
+
+      // If we haven't created the heartbeat sound yet, create it
+      if (!this.tickSound) {
+        this.tickSound = new Audio();
+        this.tickSound.src =
+          "data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+        this.tickSound.volume = 0.3;
+      }
+
+      // Play the tick sound if not already playing
+      // Adjust playback rate based on time left
+      if (this.tickSound && (this.tickSound.paused || this.tickSound.ended)) {
+        this.tickSound.playbackRate =
+          this.timeLeft === 0 ? 2.0 : this.timeLeft === 1 ? 1.5 : 1.0;
+        this.tickSound
+          .play()
+          .catch((e) => console.log("Failed to play tick sound:", e));
+      }
+    } else {
+      // Remove the warning class if time is more than 2 seconds
+      this.timerElement.classList.remove("timer-warning");
+      this.timerElement.style.fontSize = ""; // Reset font size
+
+      // Remove warning from seconds text if it exists
+      if (secondsText && secondsText.classList) {
+        secondsText.classList.remove("timer-warning");
+      }
+
+      // Remove the screen flash if it exists (from previous implementation)
+      const flash = document.querySelector(".time-warning-flash");
+      if (flash) {
+        flash.remove();
+      }
+
+      // Stop the tick sound if it's playing
+      if (this.tickSound && !this.tickSound.paused) {
+        this.tickSound.pause();
+        this.tickSound.currentTime = 0;
+      }
+    }
   }
 
   updateScore() {
@@ -164,6 +242,9 @@ class Game {
     // Disable all options
     this.options.forEach((opt) => (opt.style.pointerEvents = "none"));
 
+    // Clean up any timer-related effects
+    this.cleanupTimerEffects();
+
     // Show feedback
     if (isCorrect) {
       option.classList.add("correct");
@@ -171,7 +252,7 @@ class Game {
       await Animations.showConfetti(option);
     } else {
       option.classList.add("incorrect");
-      this.score -= CONFIG.SCORE_DECREMENT;
+      // this.score -= CONFIG.SCORE_DECREMENT;
       await Animations.showBomb(option);
     }
 
@@ -205,6 +286,10 @@ class Game {
     if (!this.isPlaying) return;
     this.isPlaying = false;
     clearInterval(this.timer);
+
+    // Clean up any timer-related effects
+    this.cleanupTimerEffects();
+
     this.score -= CONFIG.SCORE_DECREMENT;
     this.updateScore();
     this.currentRound++;
@@ -212,8 +297,11 @@ class Game {
   }
 
   async endGame() {
+    // Clean up any timer-related effects
+    this.cleanupTimerEffects();
+
     await Animations.fadeOut(this.gameScreen);
-    this.finalScoreElement.textContent = this.score;
+    this.finalScoreElement.textContent = this.score + " / " + CONFIG.ROUNDS;
     await Animations.fadeIn(this.gameOverScreen);
   }
 
@@ -222,6 +310,35 @@ class Game {
     await Animations.fadeOut(this.gameScreen);
     await Animations.fadeOut(this.gameOverScreen);
     await Animations.fadeIn(screen);
+  }
+
+  // Helper method to clean up timer effects
+  cleanupTimerEffects() {
+    // Remove timer warning class
+    if (this.timerElement) {
+      this.timerElement.classList.remove("timer-warning");
+      this.timerElement.style.fontSize = ""; // Reset font size
+      this.timerElement.style.animationDuration = ""; // Reset animation duration
+
+      // Also clean up the seconds text
+      const timerContainer = this.timerElement.parentElement;
+      const secondsText = timerContainer.querySelector("span:not(#timer)");
+      if (secondsText) {
+        secondsText.classList.remove("timer-warning");
+      }
+    }
+
+    // Remove screen flash if it exists from previous implementation
+    const flash = document.querySelector(".time-warning-flash");
+    if (flash) {
+      flash.remove();
+    }
+
+    // Stop tick sound
+    if (this.tickSound && !this.tickSound.paused) {
+      this.tickSound.pause();
+      this.tickSound.currentTime = 0;
+    }
   }
 
   // Method for handling "Play Again" button
@@ -233,6 +350,9 @@ class Game {
       clearInterval(this.timer);
       this.timer = null;
     }
+
+    // Clean up any timer-related effects
+    this.cleanupTimerEffects();
 
     // Reset game state
     this.score = 0;

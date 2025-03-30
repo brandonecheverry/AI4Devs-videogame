@@ -24,5 +24,5 @@ const CONFIG = {
   // Animation settings
   ANIMATION_DURATION: 500, // milliseconds
   CARD_FLIP_DURATION: 800, // milliseconds
-  FEEDBACK_DURATION: 1000, // milliseconds
+  FEEDBACK_DURATION: 2000, // milliseconds - increased to allow explosion animation to complete
 };
