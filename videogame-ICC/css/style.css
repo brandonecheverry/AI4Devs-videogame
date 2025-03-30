@@ -121,6 +121,16 @@ button:active {
     box-shadow: 0 0 10px #f9d423, 0 0 20px #f9d423;
 }
 
+.letter-tile.hint {
+    animation: pulse 1.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(249, 212, 35, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(249, 212, 35, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 212, 35, 0); }
+}
+
 .letter-tile .letter {
     font-size: 2.5rem;
     font-weight: bold;
@@ -285,6 +295,12 @@ button:active {
     border: 1px solid #f9d423;
     background-color: #1a2530;
     color: #fff;
+}
+
+/* Spanish-specific styles */
+.letter-tile .letter:contains('Ñ') {
+    color: #f9d423;
+    text-shadow: 0 0 5px #f9d423;
 }
 
 /* Responsive Styles */

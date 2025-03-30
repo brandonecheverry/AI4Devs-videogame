@@ -47,8 +47,9 @@ class LetterTile {
 }
 
 class GameBoard {
-    constructor(size = 4) {
+    constructor(size = 4, language = 'english') {
         this.size = size;
+        this.language = language;
         this.grid = [];
         this.boardElement = document.querySelector('.game-board');
         this.selectedTiles = [];
@@ -74,35 +75,67 @@ class GameBoard {
     }
 
     generateRandomGrid() {
-        // Letter frequency based on English language and their point values
-        const letterPool = [
-            { letter: 'A', points: 1, frequency: 9 },
-            { letter: 'B', points: 3, frequency: 2 },
-            { letter: 'C', points: 3, frequency: 2 },
-            { letter: 'D', points: 2, frequency: 4 },
-            { letter: 'E', points: 1, frequency: 12 },
-            { letter: 'F', points: 4, frequency: 2 },
-            { letter: 'G', points: 2, frequency: 3 },
-            { letter: 'H', points: 4, frequency: 2 },
-            { letter: 'I', points: 1, frequency: 9 },
-            { letter: 'J', points: 8, frequency: 1 },
-            { letter: 'K', points: 5, frequency: 1 },
-            { letter: 'L', points: 1, frequency: 4 },
-            { letter: 'M', points: 3, frequency: 2 },
-            { letter: 'N', points: 1, frequency: 6 },
-            { letter: 'O', points: 1, frequency: 8 },
-            { letter: 'P', points: 3, frequency: 2 },
-            { letter: 'Q', points: 10, frequency: 1 },
-            { letter: 'R', points: 1, frequency: 6 },
-            { letter: 'S', points: 1, frequency: 4 },
-            { letter: 'T', points: 1, frequency: 6 },
-            { letter: 'U', points: 1, frequency: 4 },
-            { letter: 'V', points: 4, frequency: 2 },
-            { letter: 'W', points: 4, frequency: 2 },
-            { letter: 'X', points: 8, frequency: 1 },
-            { letter: 'Y', points: 4, frequency: 2 },
-            { letter: 'Z', points: 10, frequency: 1 }
-        ];
+        // Letter frequency based on language selected
+        let letterPool;
+        
+        if (this.language === 'spanish') {
+            letterPool = [
+                { letter: 'A', points: 1, frequency: 12 },
+                { letter: 'B', points: 3, frequency: 2 },
+                { letter: 'C', points: 3, frequency: 4 },
+                { letter: 'D', points: 2, frequency: 5 },
+                { letter: 'E', points: 1, frequency: 12 },
+                { letter: 'F', points: 4, frequency: 1 },
+                { letter: 'G', points: 2, frequency: 2 },
+                { letter: 'H', points: 4, frequency: 1 },
+                { letter: 'I', points: 1, frequency: 6 },
+                { letter: 'J', points: 8, frequency: 1 },
+                { letter: 'L', points: 1, frequency: 5 },
+                { letter: 'M', points: 3, frequency: 2 },
+                { letter: 'N', points: 1, frequency: 6 },
+                { letter: 'Ñ', points: 8, frequency: 1 },
+                { letter: 'O', points: 1, frequency: 9 },
+                { letter: 'P', points: 3, frequency: 2 },
+                { letter: 'Q', points: 5, frequency: 1 },
+                { letter: 'R', points: 1, frequency: 6 },
+                { letter: 'S', points: 1, frequency: 7 },
+                { letter: 'T', points: 1, frequency: 4 },
+                { letter: 'U', points: 1, frequency: 5 },
+                { letter: 'V', points: 4, frequency: 1 },
+                { letter: 'X', points: 8, frequency: 1 },
+                { letter: 'Y', points: 4, frequency: 1 },
+                { letter: 'Z', points: 10, frequency: 1 }
+            ];
+        } else {
+            letterPool = [
+                { letter: 'A', points: 1, frequency: 9 },
+                { letter: 'B', points: 3, frequency: 2 },
+                { letter: 'C', points: 3, frequency: 2 },
+                { letter: 'D', points: 2, frequency: 4 },
+                { letter: 'E', points: 1, frequency: 12 },
+                { letter: 'F', points: 4, frequency: 2 },
+                { letter: 'G', points: 2, frequency: 3 },
+                { letter: 'H', points: 4, frequency: 2 },
+                { letter: 'I', points: 1, frequency: 9 },
+                { letter: 'J', points: 8, frequency: 1 },
+                { letter: 'K', points: 5, frequency: 1 },
+                { letter: 'L', points: 1, frequency: 4 },
+                { letter: 'M', points: 3, frequency: 2 },
+                { letter: 'N', points: 1, frequency: 6 },
+                { letter: 'O', points: 1, frequency: 8 },
+                { letter: 'P', points: 3, frequency: 2 },
+                { letter: 'Q', points: 10, frequency: 1 },
+                { letter: 'R', points: 1, frequency: 6 },
+                { letter: 'S', points: 1, frequency: 4 },
+                { letter: 'T', points: 1, frequency: 6 },
+                { letter: 'U', points: 1, frequency: 4 },
+                { letter: 'V', points: 4, frequency: 2 },
+                { letter: 'W', points: 4, frequency: 2 },
+                { letter: 'X', points: 8, frequency: 1 },
+                { letter: 'Y', points: 4, frequency: 2 },
+                { letter: 'Z', points: 10, frequency: 1 }
+            ];
+        }
 
         // Create a pool of letters based on their frequency
         const weightedPool = [];
@@ -268,12 +301,12 @@ class Game {
         this.timer = null;
         this.timeRemaining = 120; // 2 minutes by default
         this.difficulty = 'medium';
+        this.language = 'english'; // Default language
         this.soundEnabled = true;
         this.hintsRemaining = 3;
         
-        // Dictionary for word validation - we'll use a simple array for now
-        // In a real game, you would want to load a proper dictionary file
-        this.dictionary = [
+        // Dictionary for English word validation
+        this.englishDictionary = [
             "act", "add", "age", "ago", "air", "all", "and", "any", "arm", "art", "ask", "bad", 
             "bag", "bar", "bat", "bed", "bet", "big", "bit", "box", "boy", "bug", "bus", "but", 
             "buy", "can", "cap", "car", "cat", "cup", "cut", "dad", "day", "die", "dog", "dot", 
@@ -334,7 +367,41 @@ class Game {
             "west", "what", "when", "whom", "wide", "wife", "wild", "will", "wind", "wine", "wing", 
             "wire", "wise", "wish", "with", "wood", "word", "wore", "work", "yard", "yeah", "year", 
             "your", "zero", "zone"
-            // This is just a subset - a real game would have thousands of words
+        ];
+        
+        // Dictionary for Spanish word validation
+        this.spanishDictionary = [
+            "ala", "año", "aro", "ave", "ajo", "ama", "ata", "asa", "así", "amo", "acá", "aya", "ala", 
+            "bebé", "bien", "boca", "bajo", "bola", "base", "baño", "boca", "buey", "beso", "baúl", 
+            "cama", "cien", "casa", "cuna", "café", "celo", "cosa", "celo", "cana", "codo", "coco", 
+            "dado", "duda", "digo", "dios", "dama", "dato", "daño", "dedo", "desde", "diez", "dúo",
+            "edad", "ello", "ella", "ente", "este", "está", "eras", "esos", "esas", "eres", "esto",
+            "flor", "fumo", "fila", "fome", "fama", "fino", "feliz", "foca", "foto", "frito", "faro",
+            "gato", "goma", "gris", "guía", "gana", "gota", "gira", "gira", "gran", "genio", "gasto",
+            "hoja", "hora", "hijo", "hilo", "hipo", "horno", "hago", "hecho", "hielo", "huevo", "hacia",
+            "idea", "igual", "isla", "iris", "izó", "iris", "irme", "id", "iba", "iman", "isla",
+            "jamón", "jaula", "judío", "juez", "joven", "juego", "jarro", "jugo", "junio", "junto", "jalea",
+            "kilo", "koala", "karate", "kiwi", "karma", "kiosco", "kit", "kaki", "kayak", "kebab", "kéfir",
+            "lado", "lana", "lobo", "lucha", "lento", "libro", "lazo", "lío", "liga", "lila", "leche",
+            "mesa", "mano", "madre", "mono", "mudo", "miel", "masa", "macho", "menta", "mosca", "metro",
+            "nada", "nido", "noche", "nube", "noria", "nariz", "nuevo", "niño", "nana", "nieve", "nivel",
+            "ñandú", "ñoño", "ñu", "ñame", "ñaño", "ñacurutú", "ñagaza", "ñacundá", "ñareja", "ñandubay",
+            "ojo", "olla", "once", "oso", "ocho", "ovni", "otro", "obra", "ocio", "oír", "orden",
+            "piso", "papá", "puma", "pelo", "para", "pera", "pila", "pelo", "pato", "piña", "punto",
+            "queso", "quien", "quita", "quince", "quedar", "queja", "querer", "quemar", "quehacer", "quizá",
+            "roca", "rato", "risa", "roto", "rojo", "remo", "rosa", "ruda", "raro", "rana", "ropa",
+            "sapo", "suma", "sede", "silla", "suelo", "saco", "sopa", "sobra", "serio", "suave", "sobre",
+            "taza", "tela", "tiene", "truco", "tono", "toro", "techo", "todo", "tarde", "tirar", "tomar",
+            "uña", "uva", "usual", "último", "unido", "útil", "único", "usar", "uno", "unión", "urna",
+            "vaca", "vaso", "vino", "vela", "vale", "voz", "vida", "viejo", "veloz", "verde", "valor",
+            "xilófono", "xenón", "xerox", "xenofobia", "xilofonista", "xilema", "xi", "xeroftalmia",
+            "yate", "yodo", "yema", "yugo", "yoga", "yacer", "yarda", "yoyó", "yerno", "yeso", "yuca",
+            "zarpa", "zona", "zorro", "zombi", "zapato", "zulo", "zinc", "zambo", "zumba", "zumo", "zurdo",
+            "amigo", "abeja", "abrigo", "acento", "actuar", "adorno", "afecto", "agente", "ahora", "ajeno",
+            "bonito", "bosque", "bravo", "broma", "buscar", "bueno", "bailar", "banana", "beber", "bañar",
+            "cabeza", "calle", "calor", "campo", "cantar", "caoba", "casar", "cebra", "cenar", "cerdo",
+            "decir", "deber", "dedal", "dejar", "delta", "dentro", "desde", "diario", "dolor", "donar",
+            "enero", "enorme", "entrar", "envío", "equipo", "escudo", "espina", "estado", "estilo", "eterno"
         ];
         
         // DOM elements
@@ -362,7 +429,7 @@ class Game {
 
     init() {
         // Create game board
-        this.board = new GameBoard(4);
+        this.board = new GameBoard(4, this.language);
         
         // Set up event listeners
         this.setupEventListeners();
@@ -424,6 +491,11 @@ class Game {
         this.hintsElement.textContent = this.hintsRemaining;
         this.foundWordsElement.innerHTML = '';
         
+        // Update board language if needed
+        if (this.board.language !== this.language) {
+            this.board = new GameBoard(4, this.language);
+        }
+        
         // Initialize board with new letters
         this.board.initialize();
         
@@ -448,8 +520,11 @@ class Game {
     validateWord(word, tiles) {
         word = word.toLowerCase();
         
+        // Use the appropriate dictionary based on language
+        const dictionary = this.language === 'spanish' ? this.spanishDictionary : this.englishDictionary;
+        
         // Check if the word is in the dictionary and not already found
-        if (this.dictionary.includes(word) && !this.foundWords.includes(word)) {
+        if (dictionary.includes(word) && !this.foundWords.includes(word)) {
             // Calculate score based on word length and tile points
             const wordScore = this.calculateWordScore(tiles);
             
@@ -513,8 +588,10 @@ class Game {
 
     findValidWords() {
         // This is a simplified implementation
-        // In a real game, you would need a more sophisticated algorithm to find all possible words on the board
         const validWords = [];
+        
+        // Use the appropriate dictionary
+        const dictionary = this.language === 'spanish' ? this.spanishDictionary : this.englishDictionary;
         
         // Check a few random starting positions for valid words
         for (let attempts = 0; attempts < 20; attempts++) {
@@ -523,20 +600,20 @@ class Game {
             const startTile = this.board.grid[row][col];
             
             // Try to find a word starting with this tile
-            this.findWordsFromTile(startTile, [], '', validWords);
+            this.findWordsFromTile(startTile, [], '', validWords, dictionary);
         }
         
         return validWords;
     }
 
-    findWordsFromTile(tile, path, currentWord, validWords) {
+    findWordsFromTile(tile, path, currentWord, validWords, dictionary) {
         // Add current tile to path and update current word
         const newPath = [...path, { row: tile.row, col: tile.col }];
         const newWord = currentWord + tile.letter.toLowerCase();
         
         // Check if current word is a valid dictionary word and not already found
         if (newWord.length >= 3 && 
-            this.dictionary.includes(newWord) && 
+            dictionary.includes(newWord) && 
             !this.foundWords.includes(newWord)) {
             validWords.push({ word: newWord, path: newPath });
         }
@@ -560,7 +637,7 @@ class Game {
                     
                     // Check if tile is not already in path
                     if (!path.some(p => p.row === newRow && p.col === newCol)) {
-                        this.findWordsFromTile(nextTile, newPath, newWord, validWords);
+                        this.findWordsFromTile(nextTile, newPath, newWord, validWords, dictionary);
                     }
                 }
             }
@@ -584,6 +661,7 @@ class Game {
 
     showSettings() {
         // Update settings form with current values
+        document.getElementById('language').value = this.language;
         document.getElementById('difficulty').value = this.difficulty;
         document.getElementById('game-time').value = parseInt(document.getElementById('game-time').value) || 120;
         document.getElementById('sound-toggle').checked = this.soundEnabled;
@@ -594,26 +672,39 @@ class Game {
 
     saveSettings() {
         // Get values from form
+        const newLanguage = document.getElementById('language').value;
         this.difficulty = document.getElementById('difficulty').value;
         const gameTime = parseInt(document.getElementById('game-time').value);
         this.soundEnabled = document.getElementById('sound-toggle').checked;
         
+        // Check if language changed
+        const languageChanged = newLanguage !== this.language;
+        this.language = newLanguage;
+        
         // Save to localStorage
+        localStorage.setItem('language', this.language);
         localStorage.setItem('difficulty', this.difficulty);
         localStorage.setItem('gameTime', gameTime);
         localStorage.setItem('soundEnabled', this.soundEnabled);
         
         // Close modal
         this.settingsModal.classList.remove('active');
+        
+        // Restart the game if language changed to update the board
+        if (languageChanged) {
+            this.startNewGame();
+        }
     }
 
     loadSettings() {
         // Load settings from localStorage
+        this.language = localStorage.getItem('language') || 'english';
         this.difficulty = localStorage.getItem('difficulty') || 'medium';
         const gameTime = parseInt(localStorage.getItem('gameTime')) || 120;
         this.soundEnabled = localStorage.getItem('soundEnabled') === 'true';
         
         // Update form elements
+        document.getElementById('language').value = this.language;
         document.getElementById('difficulty').value = this.difficulty;
         document.getElementById('game-time').value = gameTime;
         document.getElementById('sound-toggle').checked = this.soundEnabled;
