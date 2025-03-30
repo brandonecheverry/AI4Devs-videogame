@@ -52,5 +52,8 @@ When english is selected the letter Ñ is disabled.
 
 **Prompt 3**
 Use @https://github.com/LibreOffice/dictionaries/blob/master/es  to create a spansih dictionary with 2000 words.
-Use @https://github.com/LibreOffice/dictionaries/blob/master/en  to create a english dictionary with 2000 words.
+Use @https://github.com/LibreOffice/dictionaries/blob/master/en/en_GB.dic to create a english dictionary with 2000 words.
 
+**Prompt 4**
+how Hint button works?
+Can you add this information in help section ?
