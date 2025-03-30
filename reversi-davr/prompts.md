@@ -37,3 +37,7 @@ Don't display the board until the user has selected a size, and once they have s
 Make forfeital more visible. Instead of showing it in the text below the board, show a popup over the board, blocking gameplay until it has been acknowlegded.
 
 ## Prompt 9
+
+When the game is over, make the winner's pieces glimmer like gold (if there is a winner).
+
+## Prompt 10

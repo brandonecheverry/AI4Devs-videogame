@@ -201,14 +201,21 @@ class ReversiGame {
         return !currentHasMoves && !otherHasMoves;
     }
 
+    applyWinnerEffect(winnerColor) {
+        const pieces = document.querySelectorAll(`.piece.${winnerColor}`);
+        pieces.forEach(piece => piece.classList.add('winner'));
+    }
+
     switchPlayer() {
         if (this.isGameOver()) {
             const { black, white } = this.countPieces();
             let message = `Game Over! Final score - Black: ${black}, White: ${white}. `;
             if (black > white) {
                 message += 'Black wins!';
+                this.applyWinnerEffect('black');
             } else if (white > black) {
                 message += 'White wins!';
+                this.applyWinnerEffect('white');
             } else {
                 message += "It's a tie!";
             }

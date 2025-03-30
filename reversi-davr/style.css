@@ -112,3 +112,20 @@
 #acknowledge-forfeit:hover {
     background-color: #444;
 }
+
+@keyframes glimmer {
+    0% { background-color: #000000; }
+    25% { background-color: #DAA520; }
+    50% { background-color: #FFD700; }
+    75% { background-color: #DAA520; }
+    100% { background-color: #000000; }
+}
+
+.piece.winner {
+    animation: glimmer 2s infinite;
+}
+
+.piece.white.winner {
+    animation: none;
+    background: radial-gradient(circle at 30% 30%, #FFF, #FFD700);
+}

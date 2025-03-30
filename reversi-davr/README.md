@@ -1,8 +1,10 @@
 # Rules of Reversi
 
+![alt text](winning.gif)
+
 ## The Board
 
-1. The game is played on an 8x8 board, with pieces (tiles) that are black on one side and white on the other.
+The game is typically played on an 8x8 board, with pieces (tiles) that are black on one side and white on the other.  This implementation allows for 4x4, 6x6 and 10x10 boards as well.
 
 ## Setup
 1. Each player chooses a color (black or white) and places two pieces of their color on the board in the center of the board, forming a square, like this:
