@@ -1,0 +1,71 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --background-color: #ecf0f1;
+    --text-color: #2c3e50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-container {
+    max-width: 800px;
+    width: 90%;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 30px;
+    color: var(--primary-color);
+    text-align: left;
+}
+
+#puzzle-board {
+    margin: 20px auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-height: 300px;
+}
+
+.controls {
+    margin: 20px 0;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--secondary-color);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: var(--primary-color);
+}
+
+.message {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+}
+
+
