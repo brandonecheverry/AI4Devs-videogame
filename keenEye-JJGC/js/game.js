@@ -49,10 +49,16 @@ class Game {
       return;
     }
 
-    this.isPlaying = true;
+    // Make sure timer is stopped from previous round
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    // Reset timer state but don't start it yet
+    this.isPlaying = false; // Will be set to true after images are loaded
     this.timeLeft = CONFIG.TIME_LIMIT;
     this.updateTimer();
-    this.startTimer();
 
     // Reset all options before loading new images
     this.options.forEach((option) => {
@@ -65,10 +71,20 @@ class Game {
       }
     });
 
+    console.log(`Starting round ${this.currentRound + 1}`);
+
     // Load and display images for the current round
     const roundImages = CONFIG.IMAGE_ROUNDS[this.currentRound];
     await this.loadImages(roundImages);
     await this.displayImages(roundImages);
+
+    // Add a small delay before starting the timer
+    // This ensures all images are fully rendered and UI is updated
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Now that everything is loaded, start the timer and enable play
+    this.isPlaying = true;
+    this.startTimer();
   }
 
   async loadImages(roundImages) {
@@ -88,6 +104,8 @@ class Game {
   }
 
   async displayImages(roundImages) {
+    console.log(`Displaying images for round ${this.currentRound + 1}`);
+
     // Create a copy of the images array and shuffle it
     const shuffledImages = [...this.images];
     this.shuffleArray(shuffledImages);
@@ -107,27 +125,73 @@ class Game {
       }
     });
 
-    // Wait for all images to load
-    const loadPromises = [
-      new Promise((resolve) => {
-        if (this.mainImage.complete) resolve();
-        else this.mainImage.onload = resolve;
-      }),
-      ...Array.from(this.options).map(
-        (option) =>
-          new Promise((resolve) => {
-            const img = option.querySelector("img");
-            if (img) {
-              if (img.complete) resolve();
-              else img.onload = resolve;
-            } else {
+    // Log current image sources for debugging
+    console.log("Main image:", this.mainImage.src);
+    console.log(
+      "Option images:",
+      [...this.options].map((o) => o.querySelector("img")?.src)
+    );
+
+    try {
+      // Wait for all images to load with a timeout
+      const loadPromises = [
+        new Promise((resolve, reject) => {
+          if (this.mainImage.complete) resolve();
+          else {
+            this.mainImage.onload = resolve;
+            this.mainImage.onerror = () =>
+              reject(new Error("Failed to load main image"));
+          }
+
+          // Add timeout safety
+          setTimeout(() => {
+            if (!this.mainImage.complete) {
+              console.warn("Main image load timed out, continuing anyway");
               resolve();
             }
-          })
-      ),
-    ];
+          }, 2000);
+        }),
+        ...Array.from(this.options).map(
+          (option, idx) =>
+            new Promise((resolve, reject) => {
+              const img = option.querySelector("img");
+              if (img) {
+                if (img.complete) resolve();
+                else {
+                  img.onload = resolve;
+                  img.onerror = () => {
+                    console.error(`Failed to load option image ${idx + 1}`);
+                    resolve(); // Still resolve to allow game to continue
+                  };
+                }
 
-    await Promise.all(loadPromises);
+                // Add timeout safety
+                setTimeout(() => {
+                  if (img && !img.complete) {
+                    console.warn(
+                      `Option image ${
+                        idx + 1
+                      } load timed out, continuing anyway`
+                    );
+                    resolve();
+                  }
+                }, 2000);
+              } else {
+                resolve();
+              }
+            })
+        ),
+      ];
+
+      await Promise.all(loadPromises);
+      console.log(
+        "All images loaded successfully for round",
+        this.currentRound + 1
+      );
+    } catch (error) {
+      console.error("Error loading images:", error);
+      // Continue anyway to avoid blocking the game
+    }
   }
 
   startTimer() {
@@ -221,6 +285,13 @@ class Game {
   async handleOptionClick(event) {
     if (!this.isPlaying) return;
 
+    // Immediately stop the game and timer
+    this.isPlaying = false;
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
     const option = event.currentTarget;
     const isCorrect = option.dataset.isCorrect === "true";
 
@@ -247,7 +318,6 @@ class Game {
       await Animations.showConfetti(option);
     } else {
       option.classList.add("incorrect");
-      // this.score -= CONFIG.SCORE_DECREMENT;
       await Animations.showBomb(option);
     }
 
@@ -263,9 +333,6 @@ class Game {
     }
 
     this.updateScore();
-    this.isPlaying = false;
-    clearInterval(this.timer);
-    this.timer = null;
 
     // Wait for feedback animation
     await new Promise((resolve) =>
@@ -279,16 +346,29 @@ class Game {
 
   handleTimeUp() {
     if (!this.isPlaying) return;
+
+    // Stop the game and timer
     this.isPlaying = false;
-    clearInterval(this.timer);
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
 
     // Clean up any timer-related effects
     this.cleanupTimerEffects();
 
-    // this.score -= CONFIG.SCORE_DECREMENT;
     this.updateScore();
+
+    console.log("Time up! Moving to next round.");
+
+    // Move to next round
     this.currentRound++;
-    this.startRound();
+
+    // Add a short delay before starting the next round
+    // This helps prevent visual glitches during transitions
+    setTimeout(() => {
+      this.startRound();
+    }, 100);
   }
 
   async endGame() {
