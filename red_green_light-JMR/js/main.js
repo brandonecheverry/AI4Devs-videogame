@@ -15,7 +15,7 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            debug: GAME_CONFIG.debug // Activar/desactivar debug de físicas
+            debug: GAME_CONFIG.debug // Desactivado ahora que GAME_CONFIG.debug es false
         }
     },
     input: {

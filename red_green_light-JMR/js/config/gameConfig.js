@@ -8,7 +8,7 @@ export const GAME_CONFIG = {
     width: 800,
     height: 600,
     backgroundColor: '#87CEEB',
-    debug: true
+    debug: false // Desactivamos el modo debug
 };
 
 // Configuración del jugador
@@ -25,12 +25,20 @@ export const PLAYER_CONFIG = {
     initialPosition: {
         x: 120,
         y: 300
+    },
+    // Configuración para el efecto de tiriteo por miedo (reducido al 20%)
+    shiver: {
+        minIntensity: 0.4, // Reducido desde 2
+        maxIntensity: 0.8, // Reducido desde 4
+        minDuration: 1000,
+        maxDuration: 3000,
+        frameChance: 0.01 // 1% de probabilidad en cada frame
     }
 };
 
 // Configuración de los bots
 export const BOT_CONFIG = {
-    count: 1, // Número de bots a generar
+    count: 50, // Número de bots a generar (aumentado a 50 desde 1)
     minY: 150, // Posición Y mínima para generar bots (superior de la línea)
     maxY: 450, // Posición Y máxima para generar bots (inferior de la línea)
     initialX: 120, // Posición X inicial de los bots (igual que el jugador)
@@ -38,7 +46,9 @@ export const BOT_CONFIG = {
         minSprintTime: 3000, // Mínimo tiempo de sprint en milisegundos (3 segundos)
         maxSprintTime: 8000, // Máximo tiempo de sprint en milisegundos (8 segundos)
         reactionTimeMin: 300, // Tiempo mínimo de reacción en milisegundos
-        reactionTimeMax: 700  // Tiempo máximo de reacción en milisegundos
+        reactionTimeMax: 700,  // Tiempo máximo de reacción en milisegundos
+        shiverProbability: 0.3, // Probabilidad de que el bot tirite cuando se detiene en rojo
+        shiverFrameChance: 0.002 // 0.2% de probabilidad en cada frame durante luz roja
     },
     tintColors: [0xFF9999, 0x99FF99, 0x9999FF, 0xFFFF99, 0xFF99FF] // Colores para distinguir bots
 };

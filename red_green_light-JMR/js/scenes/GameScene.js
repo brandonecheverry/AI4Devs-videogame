@@ -233,7 +233,14 @@ class GameScene extends Phaser.Scene {
      */
     createPlayer() {
         const { x, y } = PLAYER_CONFIG.initialPosition;
-        this.player = new Player(this, x, y, PLAYER_CONFIG);
+        
+        // Configurar al jugador como controlado por el usuario
+        const playerConfig = {
+            ...PLAYER_CONFIG,
+            isControlledByPlayer: true // Marcar como jugador controlado por el usuario
+        };
+        
+        this.player = new Player(this, x, y, playerConfig);
     }
     
     /**
@@ -241,27 +248,42 @@ class GameScene extends Phaser.Scene {
      */
     createBots() {
         // Crear la cantidad de bots especificada en la configuración
-        for (let i = 0; i < BOT_CONFIG.count; i++) {
+        const botCount = BOT_CONFIG.count;
+        
+        // Calcular el espacio disponible y la distribución
+        const availableHeight = BOT_CONFIG.maxY - BOT_CONFIG.minY;
+        
+        for (let i = 0; i < botCount; i++) {
             // Generar una posición Y aleatoria dentro del rango configurado
+            // Usamos una distribución más uniforme para evitar aglomeraciones
             const randomY = Phaser.Math.Between(BOT_CONFIG.minY, BOT_CONFIG.maxY);
             
-            // Crear el bot
-            const bot = new Bot(this, BOT_CONFIG.initialX, randomY, {
-                ...PLAYER_CONFIG,
-                botConfig: BOT_CONFIG.botConfig
-            });
+            // Crear pequeña variación en X para evitar superposición exacta
+            const randomXOffset = Phaser.Math.Between(-10, 10);
+            const botX = BOT_CONFIG.initialX + randomXOffset;
             
-            // Aplicar un color distintivo al bot
+            // Crear el bot con su propia configuración
+            const botConfig = {
+                ...PLAYER_CONFIG,
+                botConfig: BOT_CONFIG.botConfig,
+                isControlledByPlayer: false // Asegurarse de que no tenga indicador de jugador
+            };
+            
+            // Crear el bot
+            const bot = new Bot(this, botX, randomY, botConfig);
+            
+            // Aplicar un color distintivo aleatorio al bot
             if (BOT_CONFIG.tintColors && BOT_CONFIG.tintColors.length > 0) {
-                const colorIndex = i % BOT_CONFIG.tintColors.length;
+                // Usar un color aleatorio del array de colores
+                const colorIndex = Math.floor(Math.random() * BOT_CONFIG.tintColors.length);
                 bot.getSprite().setTint(BOT_CONFIG.tintColors[colorIndex]);
             }
             
             // Añadir el bot al array de bots
             this.bots.push(bot);
-            
-            console.log(`Bot ${i+1} creado en posición Y: ${randomY}`);
         }
+        
+        console.log(`✅ Creados ${botCount} bots a lo largo de la línea de partida`);
     }
     
     /**
@@ -609,7 +631,7 @@ class GameScene extends Phaser.Scene {
         // Verificar el estado general del juego
         this.checkGameState();
         
-        // Actualizar textos de debug si están activos
+        // Actualizar textos de debug si están activos (ahora desactivado por configuración)
         if (GAME_CONFIG.debug) {
             this.updateDebugText();
         }
@@ -646,8 +668,23 @@ class GameScene extends Phaser.Scene {
     
     /**
      * Actualiza el texto de depuración con información del juego
+     * (No se muestra cuando debug está desactivado)
      */
     updateDebugText() {
+        // Si debug está desactivado, eliminar textos existentes y salir
+        if (!GAME_CONFIG.debug) {
+            if (this.debugText) {
+                this.debugText.destroy();
+                this.debugText = null;
+            }
+            
+            if (this.botDebugTexts) {
+                this.botDebugTexts.forEach(text => text.destroy());
+                this.botDebugTexts = null;
+            }
+            return;
+        }
+        
         // Limpiar textos de debug previos
         if (this.debugText) {
             this.debugText.destroy();
@@ -668,7 +705,8 @@ class GameScene extends Phaser.Scene {
         // Texto principal de debug (jugador y semáforo)
         let debugInfo = `Estado: ${playerState}\n`;
         debugInfo += `Velocidad: ${playerSpeed}\n`;
-        debugInfo += `Semáforo: ${lightState}`;
+        debugInfo += `Semáforo: ${lightState}\n`;
+        debugInfo += `Bots activos: ${this.bots.length}`;
         
         this.debugText = this.add.text(10, 10, debugInfo, {
             fontSize: '16px',
@@ -677,16 +715,32 @@ class GameScene extends Phaser.Scene {
             padding: { x: 5, y: 5 }
         });
         
-        // Información de los bots
-        this.bots.forEach((bot, index) => {
-            const botState = bot.getState();
-            const botSpeed = Math.round(bot.speed * 100) / 100; // Redondear a 2 decimales
+        // Con muchos bots, solo mostrar estadísticas generales para evitar sobrecarga
+        if (this.bots.length > 5) {
+            // Contar bots por estado
+            const botStats = {
+                waiting: 0,
+                moving: 0,
+                paused: 0,
+                finished: 0,
+                dead: 0
+            };
             
-            let botInfo = `Bot ${index + 1}\n`;
-            botInfo += `Estado: ${botState}\n`;
-            botInfo += `Velocidad: ${botSpeed}`;
+            this.bots.forEach(bot => {
+                const state = bot.getState();
+                if (botStats.hasOwnProperty(state)) {
+                    botStats[state]++;
+                }
+            });
             
-            const botText = this.add.text(10, 100 + (index * 90), botInfo, {
+            let botStatsText = "Estadísticas de Bots:\n";
+            botStatsText += `Esperando: ${botStats.waiting}\n`;
+            botStatsText += `Moviendo: ${botStats.moving}\n`;
+            botStatsText += `Pausados: ${botStats.paused}\n`;
+            botStatsText += `Terminados: ${botStats.finished}\n`;
+            botStatsText += `Eliminados: ${botStats.dead}`;
+            
+            const botText = this.add.text(10, 100, botStatsText, {
                 fontSize: '14px',
                 fill: '#ffffff',
                 backgroundColor: '#333333',
@@ -694,7 +748,28 @@ class GameScene extends Phaser.Scene {
             });
             
             this.botDebugTexts.push(botText);
-        });
+        } 
+        // Si hay pocos bots, mostrar información detallada de cada uno
+        else {
+            // Información de los bots
+            this.bots.forEach((bot, index) => {
+                const botState = bot.getState();
+                const botSpeed = Math.round(bot.speed * 100) / 100; // Redondear a 2 decimales
+                
+                let botInfo = `Bot ${index + 1}\n`;
+                botInfo += `Estado: ${botState}\n`;
+                botInfo += `Velocidad: ${botSpeed}`;
+                
+                const botText = this.add.text(10, 100 + (index * 90), botInfo, {
+                    fontSize: '14px',
+                    fill: '#ffffff',
+                    backgroundColor: '#333333',
+                    padding: { x: 5, y: 5 }
+                });
+                
+                this.botDebugTexts.push(botText);
+            });
+        }
     }
 }
 

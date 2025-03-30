@@ -22,6 +22,7 @@ class Player {
             acceleration: 5,
             deceleration: 3,
             minSpeedThreshold: 5,
+            isControlledByPlayer: false, // Indica si es el jugador principal
             ...config
         };
         
@@ -29,6 +30,11 @@ class Player {
         this.speed = 0;
         this.isMoving = false;
         this.state = 'waiting'; // 'waiting', 'moving', 'paused', 'finished', 'dead'
+        
+        // Variables para el tiriteo cuando está asustado durante la luz roja
+        this.isShivering = false;
+        this.shiverTimer = null;
+        this.shiverIntensity = 0;
         
         // Crear el jugador en la escena
         this.create();
@@ -47,8 +53,44 @@ class Player {
         this.sprite.setCollideWorldBounds(true);
         this.sprite.setBounce(0);
         
+        // Si este es el jugador controlado por el usuario, añadir un triángulo azul sutil
+        if (this.config.isControlledByPlayer) {
+            this.createPlayerIndicator();
+        }
+        
         // Actualizar la animación inicial
         this.updateAnimation();
+    }
+    
+    /**
+     * Crea un indicador triangular sutil encima del pingüino del jugador
+     */
+    createPlayerIndicator() {
+        // Crear un triángulo azul encima del pingüino
+        this.playerIndicator = this.scene.add.graphics();
+        this.playerIndicator.fillStyle(0x3333ff, 0.7); // Azul semi-transparente
+        
+        // Dibujar un triángulo pequeño
+        this.playerIndicator.beginPath();
+        this.playerIndicator.moveTo(0, -30); // Punta superior
+        this.playerIndicator.lineTo(-6, -20); // Esquina izquierda
+        this.playerIndicator.lineTo(6, -20); // Esquina derecha
+        this.playerIndicator.closePath();
+        this.playerIndicator.fillPath();
+        
+        // Posicionar el indicador donde está el sprite
+        this.playerIndicator.x = this.sprite.x;
+        this.playerIndicator.y = this.sprite.y;
+    }
+    
+    /**
+     * Actualiza la posición del indicador del jugador en cada frame
+     */
+    updatePlayerIndicator() {
+        if (this.playerIndicator && this.config.isControlledByPlayer) {
+            this.playerIndicator.x = this.sprite.x;
+            this.playerIndicator.y = this.sprite.y;
+        }
     }
     
     /**
@@ -69,6 +111,17 @@ class Player {
                 // Mostrar al pingüino estático en lugar de deslizándose
                 this.sprite.setTexture('penguin_walk1');
                 this.sprite.anims.stop();
+                
+                // Si el semáforo está en rojo y el jugador está parado, puede tiritar
+                if (this.scene.trafficLight && this.scene.trafficLight.isRed()) {
+                    // Intentar iniciar el tiriteo si no está tiritando ya
+                    if (!this.isShivering && Math.random() < this.config.shiver?.frameChance) {
+                        this.startShivering();
+                    }
+                } else {
+                    // Si el semáforo no está en rojo, asegurarse de detener el tiriteo
+                    this.stopShivering();
+                }
                 break;
             case 'finished':
                 this.sprite.setTexture('penguin_walk1');
@@ -149,6 +202,11 @@ class Player {
         if (this.state === 'dead') return;
         
         this.state = 'dead';
+        
+        // Ocultar el indicador del jugador si existe
+        if (this.playerIndicator) {
+            this.playerIndicator.setVisible(false);
+        }
         
         // Detener inmediatamente toda velocidad e inercia
         this.speed = 0;
@@ -239,6 +297,11 @@ class Player {
         this.state = 'finished';
         this.sprite.setVelocity(0);
         
+        // Ocultar el indicador del jugador si existe
+        if (this.playerIndicator) {
+            this.playerIndicator.setVisible(false);
+        }
+        
         // Establecer animación de victoria (usar el primer frame de caminar)
         this.sprite.setTexture('penguin_walk1');
         this.sprite.setTint(0x00ff00); // Tinte verde para indicar victoria
@@ -271,9 +334,12 @@ class Player {
      * Actualiza el jugador en cada frame
      */
     update() {
-        // Solo actualizar la animación si el jugador está vivo
-        if (this.state !== 'dead') {
-            this.updateAnimation();
+        // Actualizar la animación según el estado
+        this.updateAnimation();
+        
+        // Actualizar la posición del indicador del jugador si existe
+        if (this.config.isControlledByPlayer) {
+            this.updatePlayerIndicator();
         }
     }
     
@@ -299,6 +365,217 @@ class Player {
      */
     getSprite() {
         return this.sprite;
+    }
+    
+    /**
+     * Inicia el efecto de tiriteo por miedo
+     */
+    startShivering() {
+        if (this.isShivering || this.state === 'dead' || this.state === 'finished') return;
+        
+        this.isShivering = true;
+        
+        // Obtener la configuración de tiriteo
+        const shiverConfig = this.config.shiver || {
+            minIntensity: 0.4, // Valor predeterminado reducido
+            maxIntensity: 0.8, // Valor predeterminado reducido
+            minDuration: 1000,
+            maxDuration: 3000
+        };
+        
+        // Intensidad aleatoria según la configuración
+        this.shiverIntensity = Phaser.Math.Between(
+            shiverConfig.minIntensity * 10, 
+            shiverConfig.maxIntensity * 10
+        ) / 10; // Convertir a decimal para mayor precisión
+        
+        // Guardar la posición original del pingüino
+        this.originalX = this.sprite.x;
+        
+        // Cambiar muy ligeramente el tinte del pingüino para mostrar miedo (azul muy pálido)
+        this.sprite.setTint(0xeeeeff); // Tinte más sutil
+        
+        // Crear el efecto de "sudor frío" (pequeñas gotas azules) - más sutil
+        this.createSweatDrops();
+        
+        // Crear un temporizador para el tiriteo con duración aleatoria
+        const shiverDuration = Phaser.Math.Between(
+            shiverConfig.minDuration, 
+            shiverConfig.maxDuration
+        );
+        
+        // Crear efecto de tiriteo con tweens - más sutil
+        this.shiverTween = this.scene.tweens.add({
+            targets: this.sprite,
+            x: this.originalX - this.shiverIntensity / 2, // Desplazamiento mínimo
+            duration: 50,
+            yoyo: true,
+            repeat: Math.floor(shiverDuration / 100), // Repetir según la duración
+            ease: 'Sine.easeInOut',
+            onUpdate: () => {
+                // Vibración aleatoria adicional - mucho más sutil
+                if (Math.random() < 0.3) { // Reducida la probabilidad también
+                    this.sprite.x += Phaser.Math.Between(-this.shiverIntensity, this.shiverIntensity) * 0.5;
+                }
+                
+                // Actualizar posición de las gotas de sudor
+                this.updateSweatDrops();
+            },
+            onComplete: () => {
+                this.stopShivering();
+            }
+        });
+        
+        // Detener el tiriteo después de un tiempo aleatorio
+        this.shiverTimer = this.scene.time.delayedCall(shiverDuration, () => {
+            this.stopShivering();
+        });
+    }
+    
+    /**
+     * Crea el efecto visual de "sudor frío" para el miedo
+     */
+    createSweatDrops() {
+        // Eliminar gotas existentes si las hubiera
+        if (this.sweatDrops) {
+            this.sweatDrops.forEach(drop => drop.destroy());
+        }
+        
+        // Crear array para almacenar las gotas
+        this.sweatDrops = [];
+        
+        // Determinar el número de gotas según si es jugador principal o bot
+        // El jugador principal puede tener más gotas que los bots
+        let numDrops;
+        
+        if (this.config.isControlledByPlayer) {
+            // Para el jugador principal, 1-2 gotas
+            numDrops = Phaser.Math.Between(1, 2);
+        } else {
+            // Para los bots, con muchos en pantalla, reducir a 0-1 gotas
+            // Además, solo un porcentaje de los bots tendrán gotas de sudor
+            const totalBots = this.scene.bots ? this.scene.bots.length : 0;
+            
+            if (totalBots > 20 && Math.random() < 0.7) {
+                // Con muchos bots, 70% de probabilidad de no mostrar gotas
+                numDrops = 0;
+            } else {
+                // Máximo una gota para bots
+                numDrops = Math.random() < 0.6 ? 1 : 0;
+            }
+        }
+        
+        for (let i = 0; i < numDrops; i++) {
+            // Posición relativa al pingüino (alrededor de la cabeza)
+            const offsetX = Phaser.Math.Between(-15, 15);
+            const offsetY = Phaser.Math.Between(-20, -10);
+            
+            // Crear gráfico para la gota
+            const sweatDrop = this.scene.add.graphics();
+            sweatDrop.fillStyle(0x6666ff, 0.4); // Azul pálido más transparente
+            sweatDrop.fillCircle(0, 0, Phaser.Math.Between(1, 2)); // Tamaño más pequeño
+            sweatDrop.x = this.sprite.x + offsetX;
+            sweatDrop.y = this.sprite.y + offsetY;
+            
+            // Añadir animación de "caída" para la gota
+            this.scene.tweens.add({
+                targets: sweatDrop,
+                y: sweatDrop.y + Phaser.Math.Between(3, 5), // Caer menos
+                alpha: 0, // Desaparecer gradualmente
+                duration: Phaser.Math.Between(500, 1000),
+                delay: i * 300, // Mayor retraso entre gotas
+                onComplete: () => {
+                    // Eliminar la gota cuando termina la animación
+                    sweatDrop.destroy();
+                    
+                    // Si el pingüino sigue tiritando, crear una nueva gota
+                    // Solo para el jugador principal o con probabilidad reducida para bots
+                    const shouldCreateNewDrop = this.isShivering && 
+                        (this.config.isControlledByPlayer || Math.random() < 0.3);
+                    
+                    if (shouldCreateNewDrop) {
+                        const newDrop = this.scene.add.graphics();
+                        newDrop.fillStyle(0x6666ff, 0.4);
+                        newDrop.fillCircle(0, 0, Phaser.Math.Between(1, 2));
+                        newDrop.x = this.sprite.x + Phaser.Math.Between(-15, 15);
+                        newDrop.y = this.sprite.y + Phaser.Math.Between(-20, -10);
+                        
+                        // Reemplazar la gota en el array
+                        const index = this.sweatDrops.indexOf(sweatDrop);
+                        if (index !== -1) {
+                            this.sweatDrops[index] = newDrop;
+                        }
+                        
+                        // Animar la nueva gota
+                        this.scene.tweens.add({
+                            targets: newDrop,
+                            y: newDrop.y + Phaser.Math.Between(3, 5),
+                            alpha: 0,
+                            duration: Phaser.Math.Between(500, 1000),
+                            onComplete: () => {
+                                newDrop.destroy();
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // Añadir la gota al array
+            this.sweatDrops.push(sweatDrop);
+        }
+    }
+    
+    /**
+     * Actualiza la posición de las gotas de sudor
+     */
+    updateSweatDrops() {
+        if (!this.sweatDrops) return;
+        
+        this.sweatDrops.forEach(drop => {
+            if (drop && drop.active) {
+                // Ajustar la posición X para seguir al pingüino cuando tirita
+                drop.x += (this.sprite.x - drop.x) * 0.2;
+            }
+        });
+    }
+    
+    /**
+     * Detiene el efecto de tiriteo
+     */
+    stopShivering() {
+        if (!this.isShivering) return;
+        
+        // Detener el tween si existe
+        if (this.shiverTween) {
+            this.shiverTween.stop();
+            this.shiverTween = null;
+        }
+        
+        // Limpiar el timer
+        if (this.shiverTimer) {
+            this.shiverTimer.remove();
+            this.shiverTimer = null;
+        }
+        
+        // Devolver el pingüino a su posición original
+        if (this.originalX) {
+            this.sprite.x = this.originalX;
+        }
+        
+        // Quitar el tinte azulado
+        this.sprite.clearTint();
+        
+        // Eliminar las gotas de sudor
+        if (this.sweatDrops) {
+            this.sweatDrops.forEach(drop => {
+                if (drop && drop.active) {
+                    drop.destroy();
+                }
+            });
+            this.sweatDrops = null;
+        }
+        
+        this.isShivering = false;
     }
 }
 

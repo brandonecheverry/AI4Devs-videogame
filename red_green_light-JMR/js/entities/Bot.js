@@ -23,6 +23,8 @@ class Bot extends Player {
             maxSprintTime: 8000, // Máximo tiempo de sprint en milisegundos (8 segundos)
             reactionTimeMin: 300, // Tiempo mínimo de reacción en milisegundos
             reactionTimeMax: 700, // Tiempo máximo de reacción en milisegundos
+            shiverProbability: 0.3, // Probabilidad de que el bot tirite cuando esté en rojo
+            shiverFrameChance: 0.002, // Probabilidad de tiritar en cada frame cuando está en rojo
             ...config.botConfig
         };
         
@@ -62,6 +64,9 @@ class Bot extends Player {
         // Limpiar timers existentes
         this.clearTimers();
         
+        // Detener el tiriteo si estaba activo
+        this.stopShivering();
+        
         // Reaccionar según el estado del semáforo
         if (lightState === TRAFFIC_LIGHT_STATES.GREEN) {
             // Cuando la luz está en verde, el bot comienza a moverse después de un tiempo de reacción
@@ -89,6 +94,17 @@ class Bot extends Player {
                     this.kill();
                 } else {
                     this.stop();
+                    
+                    // Probabilidad de que el bot tirite de miedo cuando se detenga en luz roja
+                    if (Math.random() < this.botConfig.shiverProbability) {
+                        // Añadir un pequeño retraso aleatorio antes de comenzar a tiritar
+                        const shiverDelay = Phaser.Math.Between(500, 2000);
+                        this.scene.time.delayedCall(shiverDelay, () => {
+                            if (this.state === 'paused' && this.trafficLight.isRed()) {
+                                this.startShivering();
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -183,6 +199,12 @@ class Bot extends Player {
             this.lastKnownLightState = this.trafficLight.getState();
             this.reactToTrafficLight(this.lastKnownLightState);
         }
+        
+        // Si estamos detenidos y en luz roja, hay una pequeña probabilidad de tiritar aleatoriamente
+        if (this.state === 'paused' && this.trafficLight && this.trafficLight.isRed() && 
+            !this.isShivering && Math.random() < this.botConfig.shiverFrameChance) {
+            this.startShivering();
+        }
     }
     
     /**
@@ -190,6 +212,7 @@ class Bot extends Player {
      */
     destroy() {
         this.clearTimers();
+        this.stopShivering();
         
         // Si hay un método destroy en la clase padre, llamarlo
         if (super.destroy) {
@@ -213,8 +236,12 @@ class Bot extends Player {
         // Limpiar todos los timers activos
         this.clearTimers();
         
-        // Reproducir sonido de pistola usando el sistema global
-        if (this.scene.pistolSound) {
+        // Con muchos bots, reducir efectos visuales para mejorar rendimiento
+        const totalBots = this.scene.bots ? this.scene.bots.length : 0;
+        const isHighLoad = totalBots > 20;
+        
+        // Reproducir sonido de pistola usando el sistema global (solo 20% de veces con muchos bots)
+        if (this.scene.pistolSound && (!isHighLoad || Math.random() < 0.2)) {
             try {
                 this.scene.pistolSound.play();
                 console.log("🔊 Bot eliminado - Reproduciendo sonido de pistola");
@@ -240,12 +267,17 @@ class Bot extends Player {
                     duration: 500,
                     ease: 'Bounce.Out',
                     onComplete: () => {
+                        // Con muchos bots, reducir los efectos de partículas
                         // Activar el sistema de partículas en la posición del bot
-                        if (this.scene.bloodEmitter) {
+                        if (this.scene.bloodEmitter && (!isHighLoad || Math.random() < 0.3)) {
                             // Usar emitParticleAt en lugar de explode
                             this.scene.bloodEmitter.setPosition(this.sprite.x, this.sprite.y);
+                            
+                            // Reducir el número de partículas si hay muchos bots
+                            const particleCount = isHighLoad ? 20 : 50;
+                            
                             // Emitir varias partículas de una vez
-                            for (let i = 0; i < 50; i++) {
+                            for (let i = 0; i < particleCount; i++) {
                                 this.scene.bloodEmitter.emitParticleAt(
                                     this.sprite.x + Phaser.Math.Between(-10, 10),
                                     this.sprite.y + Phaser.Math.Between(-10, 10)
@@ -254,8 +286,8 @@ class Bot extends Player {
                             console.log("💥 Partículas de sangre del bot emitidas");
                         }
                         
-                        // Crear mancha de sangre permanente en el suelo
-                        if (this.scene.textures.exists('blood_puddle')) {
+                        // Crear mancha de sangre permanente en el suelo (solo algunas con muchos bots)
+                        if (this.scene.textures.exists('blood_puddle') && (!isHighLoad || Math.random() < 0.3)) {
                             const bloodPuddle = this.scene.add.image(this.sprite.x, this.sprite.y + 20, 'blood_puddle')
                                 .setOrigin(0.5, 0.5)
                                 .setScale(0.8)
