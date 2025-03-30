@@ -12,3 +12,15 @@ _We now have a working game board. The players can take turns placing their piec
 
 ## Prompt 3
 
+The game works pretty well, but when I reach a situation where the current player has no valid move, I want the game to display "No valid moves for White! White forfeits their turn. Next move: Black" (or vice versa).
+
+## Prompt 4
+
+@workspace Great. Now handle the case where neither player has any valid moves.
+
+_This prompt was rejected, or rather, the response was "filtered by the Responsible AI Service".
+
+## Prompt 5
+
+Next case: if neither player has any valid moves, the game is over.
+

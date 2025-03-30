@@ -118,7 +118,44 @@ class ReversiGame {
         document.getElementById('status').textContent = message;
     }
 
+    countPieces() {
+        let black = 0, white = 0;
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (this.board[row][col] === 'black') black++;
+                if (this.board[row][col] === 'white') white++;
+            }
+        }
+        return { black, white };
+    }
+
+    isGameOver() {
+        // Try as current player
+        const currentHasMoves = this.hasValidMoves();
+        
+        // Try as other player
+        this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+        const otherHasMoves = this.hasValidMoves();
+        this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+        
+        return !currentHasMoves && !otherHasMoves;
+    }
+
     switchPlayer() {
+        if (this.isGameOver()) {
+            const { black, white } = this.countPieces();
+            let message = `Game Over! Final score - Black: ${black}, White: ${white}. `;
+            if (black > white) {
+                message += 'Black wins!';
+            } else if (white > black) {
+                message += 'White wins!';
+            } else {
+                message += "It's a tie!";
+            }
+            this.updateStatus(message);
+            return;
+        }
+
         this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
         
         if (!this.hasValidMoves()) {
