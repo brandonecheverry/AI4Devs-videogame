@@ -103,9 +103,32 @@ class ReversiGame {
         }
     }
 
+    hasValidMoves() {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (this.isValidMove(row, col)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    updateStatus(message) {
+        document.getElementById('status').textContent = message;
+    }
+
     switchPlayer() {
         this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
-        document.getElementById('status').textContent = `Current player: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`;
+        
+        if (!this.hasValidMoves()) {
+            const currentPlayerCapitalized = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+            const nextPlayer = this.currentPlayer === 'black' ? 'White' : 'Black';
+            this.updateStatus(`No valid moves for ${currentPlayerCapitalized}! ${currentPlayerCapitalized} forfeits their turn. Next move: ${nextPlayer}`);
+            this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+        } else {
+            this.updateStatus(`Current player: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`);
+        }
     }
 
     handleMove(row, col) {
