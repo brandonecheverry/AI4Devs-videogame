@@ -1,7 +1,7 @@
 const CONFIG = {
   // Game settings
   ROUNDS: 3,
-  TIME_LIMIT: 5,
+  TIME_LIMIT: 4,
   SCORE_INCREMENT: 1,
   SCORE_DECREMENT: 1,
 

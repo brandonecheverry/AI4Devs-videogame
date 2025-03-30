@@ -35,7 +35,9 @@ class Game {
     this.score = 0;
     this.currentRound = 0;
     this.updateScore();
-    await this.showScreen(this.startScreen);
+
+    // Skip showing the start screen since we're already on it
+    // Just fade it out and show the game screen
     await Animations.fadeOut(this.startScreen);
     await Animations.fadeIn(this.gameScreen);
     await this.startRound();
@@ -144,23 +146,21 @@ class Game {
 
     // Get the parent element containing both the timer and the "s" for seconds
     const timerContainer = this.timerElement.parentElement;
-    const secondsText =
-      timerContainer.querySelector("span:not(#timer)") ||
-      timerContainer.childNodes[1];
 
     // Add warning animation when time is running out (2 seconds or less)
     if (this.timeLeft <= 2) {
-      // Add the timer-warning class for animation to the timer digit
+      // Add the timer-warning class to the entire timer container
+      timerContainer.classList.add("timer-container-warning");
+
+      // Also add the warning class to the timer digit
       this.timerElement.classList.add("timer-warning");
 
-      // Also make the "s" red if it exists
-      if (secondsText && secondsText.nodeType !== Node.TEXT_NODE) {
-        secondsText.classList.add("timer-warning");
-      } else if (secondsText) {
-        // If it's a text node, we need to wrap it in a span
-        const textContent = secondsText.textContent;
+      // Find the "s" text and make it red
+      const secondsText = timerContainer.childNodes[1];
+      if (secondsText && secondsText.nodeType === Node.TEXT_NODE) {
+        // If it's a text node, wrap it in a span
         const span = document.createElement("span");
-        span.textContent = textContent;
+        span.textContent = secondsText.textContent;
         span.classList.add("timer-warning");
         secondsText.replaceWith(span);
       }
@@ -173,10 +173,7 @@ class Game {
       const scale =
         this.timeLeft === 0 ? "1.3" : this.timeLeft === 1 ? "1.2" : "1.1";
 
-      this.timerElement.style.animationDuration = animationSpeed;
-
-      // Adjust the size dynamically
-      this.timerElement.style.fontSize = `calc(1em * ${scale})`;
+      timerContainer.style.animationDuration = animationSpeed;
 
       // If we haven't created the heartbeat sound yet, create it
       if (!this.tickSound) {
@@ -196,20 +193,18 @@ class Game {
           .catch((e) => console.log("Failed to play tick sound:", e));
       }
     } else {
-      // Remove the warning class if time is more than 2 seconds
+      // Remove the warning classes if time is more than 2 seconds
+      timerContainer.classList.remove("timer-container-warning");
       this.timerElement.classList.remove("timer-warning");
-      this.timerElement.style.fontSize = ""; // Reset font size
 
-      // Remove warning from seconds text if it exists
-      if (secondsText && secondsText.classList) {
-        secondsText.classList.remove("timer-warning");
-      }
+      // Reset animation duration
+      timerContainer.style.animationDuration = "";
 
-      // Remove the screen flash if it exists (from previous implementation)
-      const flash = document.querySelector(".time-warning-flash");
-      if (flash) {
-        flash.remove();
-      }
+      // Check for all spans with timer-warning and remove the class
+      const warningSpans = timerContainer.querySelectorAll(".timer-warning");
+      warningSpans.forEach((span) => {
+        span.classList.remove("timer-warning");
+      });
 
       // Stop the tick sound if it's playing
       if (this.tickSound && !this.tickSound.paused) {
@@ -290,7 +285,7 @@ class Game {
     // Clean up any timer-related effects
     this.cleanupTimerEffects();
 
-    this.score -= CONFIG.SCORE_DECREMENT;
+    // this.score -= CONFIG.SCORE_DECREMENT;
     this.updateScore();
     this.currentRound++;
     this.startRound();
@@ -316,16 +311,20 @@ class Game {
   cleanupTimerEffects() {
     // Remove timer warning class
     if (this.timerElement) {
-      this.timerElement.classList.remove("timer-warning");
-      this.timerElement.style.fontSize = ""; // Reset font size
-      this.timerElement.style.animationDuration = ""; // Reset animation duration
-
-      // Also clean up the seconds text
       const timerContainer = this.timerElement.parentElement;
-      const secondsText = timerContainer.querySelector("span:not(#timer)");
-      if (secondsText) {
-        secondsText.classList.remove("timer-warning");
-      }
+
+      // Remove warning classes
+      this.timerElement.classList.remove("timer-warning");
+      timerContainer.classList.remove("timer-container-warning");
+
+      // Reset animation styles
+      timerContainer.style.animationDuration = "";
+
+      // Clean up any warning spans
+      const warningSpans = timerContainer.querySelectorAll(".timer-warning");
+      warningSpans.forEach((span) => {
+        span.classList.remove("timer-warning");
+      });
     }
 
     // Remove screen flash if it exists from previous implementation

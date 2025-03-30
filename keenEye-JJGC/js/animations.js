@@ -532,11 +532,16 @@ style.textContent = `
 
     .timer-warning {
         color: #ff4757 !important;
-        animation: timer-vibrate 0.3s ease-in-out infinite;
         font-weight: bold !important;
         text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
         transform-origin: center center;
         display: inline-block;
+    }
+    
+    .timer-container-warning {
+        animation: timer-vibrate 0.3s ease-in-out infinite;
+        transform-origin: center center;
+        font-size: 1.3em;
     }
     
     @keyframes timer-vibrate {
