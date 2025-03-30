@@ -369,41 +369,6 @@ class Game {
             "your", "zero", "zone"
         ];
         
-        // Dictionary for Spanish word validation
-        this.spanishDictionary = [
-            "ala", "año", "aro", "ave", "ajo", "ama", "ata", "asa", "así", "amo", "acá", "aya", "ala", 
-            "bebé", "bien", "boca", "bajo", "bola", "base", "baño", "boca", "buey", "beso", "baúl", 
-            "cama", "cien", "casa", "cuna", "café", "celo", "cosa", "celo", "cana", "codo", "coco", 
-            "dado", "duda", "digo", "dios", "dama", "dato", "daño", "dedo", "desde", "diez", "dúo",
-            "edad", "ello", "ella", "ente", "este", "está", "eras", "esos", "esas", "eres", "esto",
-            "flor", "fumo", "fila", "fome", "fama", "fino", "feliz", "foca", "foto", "frito", "faro",
-            "gato", "goma", "gris", "guía", "gana", "gota", "gira", "gira", "gran", "genio", "gasto",
-            "hoja", "hora", "hijo", "hilo", "hipo", "horno", "hago", "hecho", "hielo", "huevo", "hacia",
-            "idea", "igual", "isla", "iris", "izó", "iris", "irme", "id", "iba", "iman", "isla",
-            "jamón", "jaula", "judío", "juez", "joven", "juego", "jarro", "jugo", "junio", "junto", "jalea",
-            "kilo", "koala", "karate", "kiwi", "karma", "kiosco", "kit", "kaki", "kayak", "kebab", "kéfir",
-            "lado", "lana", "lobo", "lucha", "lento", "libro", "lazo", "lío", "liga", "lila", "leche",
-            "mesa", "mano", "madre", "mono", "mudo", "miel", "masa", "macho", "menta", "mosca", "metro",
-            "nada", "nido", "noche", "nube", "noria", "nariz", "nuevo", "niño", "nana", "nieve", "nivel",
-            "ñandú", "ñoño", "ñu", "ñame", "ñaño", "ñacurutú", "ñagaza", "ñacundá", "ñareja", "ñandubay",
-            "ojo", "olla", "once", "oso", "ocho", "ovni", "otro", "obra", "ocio", "oír", "orden",
-            "piso", "papá", "puma", "pelo", "para", "pera", "pila", "pelo", "pato", "piña", "punto",
-            "queso", "quien", "quita", "quince", "quedar", "queja", "querer", "quemar", "quehacer", "quizá",
-            "roca", "rato", "risa", "roto", "rojo", "remo", "rosa", "ruda", "raro", "rana", "ropa",
-            "sapo", "suma", "sede", "silla", "suelo", "saco", "sopa", "sobra", "serio", "suave", "sobre",
-            "taza", "tela", "tiene", "truco", "tono", "toro", "techo", "todo", "tarde", "tirar", "tomar",
-            "uña", "uva", "usual", "último", "unido", "útil", "único", "usar", "uno", "unión", "urna",
-            "vaca", "vaso", "vino", "vela", "vale", "voz", "vida", "viejo", "veloz", "verde", "valor",
-            "xilófono", "xenón", "xerox", "xenofobia", "xilofonista", "xilema", "xi", "xeroftalmia",
-            "yate", "yodo", "yema", "yugo", "yoga", "yacer", "yarda", "yoyó", "yerno", "yeso", "yuca",
-            "zarpa", "zona", "zorro", "zombi", "zapato", "zulo", "zinc", "zambo", "zumba", "zumo", "zurdo",
-            "amigo", "abeja", "abrigo", "acento", "actuar", "adorno", "afecto", "agente", "ahora", "ajeno",
-            "bonito", "bosque", "bravo", "broma", "buscar", "bueno", "bailar", "banana", "beber", "bañar",
-            "cabeza", "calle", "calor", "campo", "cantar", "caoba", "casar", "cebra", "cenar", "cerdo",
-            "decir", "deber", "dedal", "dejar", "delta", "dentro", "desde", "diario", "dolor", "donar",
-            "enero", "enorme", "entrar", "envío", "equipo", "escudo", "espina", "estado", "estilo", "eterno"
-        ];
-        
         // DOM elements
         this.scoreElement = document.getElementById('current-score');
         this.timerElement = document.getElementById('timer');
@@ -521,7 +486,7 @@ class Game {
         word = word.toLowerCase();
         
         // Use the appropriate dictionary based on language
-        const dictionary = this.language === 'spanish' ? this.spanishDictionary : this.englishDictionary;
+        const dictionary = this.language === 'spanish' ? window.spanishDictionary : this.englishDictionary;
         
         // Check if the word is in the dictionary and not already found
         if (dictionary.includes(word) && !this.foundWords.includes(word)) {
@@ -591,7 +556,7 @@ class Game {
         const validWords = [];
         
         // Use the appropriate dictionary
-        const dictionary = this.language === 'spanish' ? this.spanishDictionary : this.englishDictionary;
+        const dictionary = this.language === 'spanish' ? window.spanishDictionary : this.englishDictionary;
         
         // Check a few random starting positions for valid words
         for (let attempts = 0; attempts < 20; attempts++) {
