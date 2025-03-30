@@ -2,10 +2,12 @@
  * GameScene - Escena principal del juego "Luz Roja, Luz Verde"
  */
 import Player from '../entities/Player.js';
+import Bot from '../entities/Bot.js';
 import TrafficLight from '../entities/TrafficLight.js';
 import { 
     GAME_CONFIG, 
-    PLAYER_CONFIG, 
+    PLAYER_CONFIG,
+    BOT_CONFIG,
     LINES_CONFIG, 
     GAME_STATES,
     TRAFFIC_LIGHT_STATES,
@@ -112,6 +114,9 @@ class GameScene extends Phaser.Scene {
         this.gameWidth = this.sys.game.config.width;
         this.gameHeight = this.sys.game.config.height;
         
+        // Array para almacenar los bots
+        this.bots = [];
+        
         // Crear animaciones para el pingüino
         this.setupAnimations();
         
@@ -121,8 +126,11 @@ class GameScene extends Phaser.Scene {
         // Crear el jugador
         this.createPlayer();
         
-        // Crear el semáforo
+        // Crear el semáforo (ANTES de los bots)
         this.createTrafficLight();
+        
+        // Crear los bots (DESPUÉS del semáforo)
+        this.createBots();
         
         // Configurar controles
         this.setupControls();
@@ -229,6 +237,34 @@ class GameScene extends Phaser.Scene {
     }
     
     /**
+     * Crea los bots del juego
+     */
+    createBots() {
+        // Crear la cantidad de bots especificada en la configuración
+        for (let i = 0; i < BOT_CONFIG.count; i++) {
+            // Generar una posición Y aleatoria dentro del rango configurado
+            const randomY = Phaser.Math.Between(BOT_CONFIG.minY, BOT_CONFIG.maxY);
+            
+            // Crear el bot
+            const bot = new Bot(this, BOT_CONFIG.initialX, randomY, {
+                ...PLAYER_CONFIG,
+                botConfig: BOT_CONFIG.botConfig
+            });
+            
+            // Aplicar un color distintivo al bot
+            if (BOT_CONFIG.tintColors && BOT_CONFIG.tintColors.length > 0) {
+                const colorIndex = i % BOT_CONFIG.tintColors.length;
+                bot.getSprite().setTint(BOT_CONFIG.tintColors[colorIndex]);
+            }
+            
+            // Añadir el bot al array de bots
+            this.bots.push(bot);
+            
+            console.log(`Bot ${i+1} creado en posición Y: ${randomY}`);
+        }
+    }
+    
+    /**
      * Crea el semáforo
      */
     createTrafficLight() {
@@ -295,19 +331,37 @@ class GameScene extends Phaser.Scene {
      * Crea los elementos de UI
      */
     createUI() {
-        // Texto de depuración
-        this.debugText = this.add.text(10, 10, 'Debug: Iniciando...', {
-            fontSize: '14px',
-            fill: '#fff',
-            backgroundColor: '#000'
+        // Instrucciones del juego
+        GAME_TEXTS.instructions.forEach(instructionConfig => {
+            this.add.text(
+                instructionConfig.position.x, 
+                instructionConfig.position.y, 
+                instructionConfig.text, 
+                { fontSize: '14px', fill: '#fff' }
+            ).setOrigin(0.5);
         });
         
-        // Texto de instrucciones
-        GAME_TEXTS.instructions.forEach(instruction => {
-            this.add.text(instruction.position.x, instruction.position.y, instruction.text, {
-                fontSize: '18px',
-                fill: '#fff'
-            }).setOrigin(0.5);
+        // Texto de debug para mostrar el estado del juego
+        this.debugText = this.add.text(10, 10, '', {
+            fontSize: '16px',
+            fill: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 5, y: 5 }
+        });
+        
+        // Array para textos de debug de los bots
+        this.botDebugTexts = [];
+        
+        // Inicializar textos de debug para los bots
+        this.bots.forEach((bot, index) => {
+            const botText = this.add.text(10, 100 + (index * 90), '', {
+                fontSize: '14px',
+                fill: '#ffffff',
+                backgroundColor: '#333333',
+                padding: { x: 5, y: 5 }
+            });
+            
+            this.botDebugTexts.push(botText);
         });
         
         // Crear indicador de audio (inicialmente invisible)
@@ -321,6 +375,9 @@ class GameScene extends Phaser.Scene {
                 padding: { x: 5, y: 2 }
             }
         ).setVisible(false);
+        
+        // Actualizar el texto de debug inmediatamente
+        this.updateDebugText();
     }
     
     /**
@@ -397,15 +454,165 @@ class GameScene extends Phaser.Scene {
         }
     }
     
+    /**
+     * Comprueba el estado del juego
+     * Determina si el jugador o todos los bots han muerto o han llegado a la meta
+     */
+    checkGameState() {
+        // Contar cuántos bots siguen "vivos" pero no han terminado
+        const activeBots = this.bots.filter(bot => 
+            bot.getState() !== GAME_STATES.DEAD && 
+            bot.getState() !== GAME_STATES.FINISHED
+        ).length;
+        
+        // Verificar si el jugador ha muerto
+        const playerDead = this.player.getState() === GAME_STATES.DEAD;
+        
+        // Verificar si el jugador ha llegado a la meta
+        const playerFinished = this.player.getState() === GAME_STATES.FINISHED;
+        
+        // Mostrar mensaje si el jugador ha ganado (llegó a la meta y hay bots muertos o activos)
+        if (playerFinished && !this.gameEndMessageShown) {
+            this.showVictoryMessage();
+            this.gameEndMessageShown = true;
+        }
+        
+        // Si todos los bots han muerto o terminado y el jugador sigue activo, el juego continúa
+        return {
+            playerDead,
+            playerFinished,
+            activeBots
+        };
+    }
+    
+    /**
+     * Muestra un mensaje de victoria personalizado con el estado de los bots
+     */
+    showVictoryMessage() {
+        // Contar bots muertos
+        const deadBots = this.bots.filter(bot => bot.getState() === GAME_STATES.DEAD).length;
+        
+        // Texto principal de victoria
+        this.add.text(400, 280, GAME_TEXTS.victory.title, {
+            fontSize: '32px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        // Texto adicional con estadísticas de los bots
+        this.add.text(400, 320, `¡Has derrotado a ${deadBots} de ${this.bots.length} bots!`, {
+            fontSize: '18px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        
+        // Texto para reiniciar
+        this.add.text(400, 350, GAME_TEXTS.victory.restart, {
+            fontSize: '18px',
+            fill: '#fff'
+        }).setOrigin(0.5);
+    }
+    
+    /**
+     * Verifica las colisiones entre jugadores/bots y la zona de meta
+     */
+    checkFinish() {
+        // Verificar si el jugador ha llegado a la meta
+        if (this.player.getState() !== GAME_STATES.DEAD && 
+            this.player.getState() !== GAME_STATES.FINISHED) {
+            
+            const playerSprite = this.player.getSprite();
+            if (playerSprite.x >= LINES_CONFIG.finishLine.x) {
+                this.player.reachFinish();
+            }
+        }
+        
+        // Verificar si algún bot ha llegado a la meta
+        this.bots.forEach(bot => {
+            if (bot.getState() !== GAME_STATES.DEAD && 
+                bot.getState() !== GAME_STATES.FINISHED) {
+                
+                const botSprite = bot.getSprite();
+                if (botSprite.x >= LINES_CONFIG.finishLine.x) {
+                    bot.reachFinish();
+                    
+                    // Mostrar mensaje si un bot gana primero
+                    if (this.player.getState() !== GAME_STATES.FINISHED && 
+                        this.player.getState() !== GAME_STATES.DEAD &&
+                        !this.botWinMessageShown) {
+                        
+                        this.add.text(400, 200, '¡UN BOT HA GANADO!', {
+                            fontSize: '24px',
+                            fill: '#ff0000',
+                            stroke: '#000',
+                            strokeThickness: 3
+                        }).setOrigin(0.5);
+                        
+                        this.botWinMessageShown = true;
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Verifica si el jugador o los bots están moviéndose durante luz roja
+     */
+    checkMovementDuringRedLight() {
+        // Solo verificar si el semáforo está en rojo
+        if (this.trafficLight && this.trafficLight.isRed()) {
+            // Verificar al jugador
+            if (this.player.isPlayerMoving() && 
+                this.player.getState() !== GAME_STATES.DEAD && 
+                this.player.getState() !== GAME_STATES.FINISHED) {
+                
+                this.player.kill();
+            }
+            
+            // Verificar a los bots (aunque su propia lógica interna también lo verifica)
+            this.bots.forEach(bot => {
+                if (bot.isPlayerMoving() && 
+                    bot.getState() !== GAME_STATES.DEAD && 
+                    bot.getState() !== GAME_STATES.FINISHED) {
+                    
+                    // Agregar un pequeño retraso aleatorio para simular tiempo de reacción
+                    const reactionDelay = Phaser.Math.Between(100, 300);
+                    this.time.delayedCall(reactionDelay, () => {
+                        bot.kill();
+                    });
+                }
+            });
+        }
+    }
+    
+    /**
+     * Actualiza el juego en cada frame
+     */
     update() {
-        // Actualizar texto de depuración
-        this.updateDebugText();
-        
-        // Manejar controles
-        this.handleControls();
-        
         // Actualizar el jugador
         this.player.update();
+        
+        // Actualizar los bots
+        this.bots.forEach(bot => bot.update());
+        
+        // Manejar los controles del jugador
+        this.handleControls();
+        
+        // Verificar si el jugador o los bots han llegado a la meta
+        this.checkFinish();
+        
+        // Verificar si el jugador o los bots se mueven en luz roja
+        this.checkMovementDuringRedLight();
+        
+        // Verificar el estado general del juego
+        this.checkGameState();
+        
+        // Actualizar textos de debug si están activos
+        if (GAME_CONFIG.debug) {
+            this.updateDebugText();
+        }
     }
     
     /**
@@ -438,18 +645,56 @@ class GameScene extends Phaser.Scene {
     }
     
     /**
-     * Actualiza el texto de depuración
+     * Actualiza el texto de depuración con información del juego
      */
     updateDebugText() {
-        const playerSprite = this.player.getSprite();
+        // Limpiar textos de debug previos
+        if (this.debugText) {
+            this.debugText.destroy();
+        }
         
-        this.debugText.setText(
-            `Debug: Estado: ${this.player.getState()}, ` +
-            `Moviendo: ${this.player.isPlayerMoving()}, ` +
-            `Velocidad: ${this.player.speed.toFixed(1)}, ` +
-            `PosX: ${playerSprite.x.toFixed(1)}, ` +
-            `Semáforo: ${this.trafficLight.getState()}`
-        );
+        if (this.botDebugTexts) {
+            this.botDebugTexts.forEach(text => text.destroy());
+        }
+        
+        // Crear array para los textos de debug de los bots
+        this.botDebugTexts = [];
+        
+        // Información del jugador
+        const playerState = this.player.getState();
+        const playerSpeed = Math.round(this.player.speed * 100) / 100; // Redondear a 2 decimales
+        const lightState = this.trafficLight ? this.trafficLight.getState() : 'unknown';
+        
+        // Texto principal de debug (jugador y semáforo)
+        let debugInfo = `Estado: ${playerState}\n`;
+        debugInfo += `Velocidad: ${playerSpeed}\n`;
+        debugInfo += `Semáforo: ${lightState}`;
+        
+        this.debugText = this.add.text(10, 10, debugInfo, {
+            fontSize: '16px',
+            fill: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 5, y: 5 }
+        });
+        
+        // Información de los bots
+        this.bots.forEach((bot, index) => {
+            const botState = bot.getState();
+            const botSpeed = Math.round(bot.speed * 100) / 100; // Redondear a 2 decimales
+            
+            let botInfo = `Bot ${index + 1}\n`;
+            botInfo += `Estado: ${botState}\n`;
+            botInfo += `Velocidad: ${botSpeed}`;
+            
+            const botText = this.add.text(10, 100 + (index * 90), botInfo, {
+                fontSize: '14px',
+                fill: '#ffffff',
+                backgroundColor: '#333333',
+                padding: { x: 5, y: 5 }
+            });
+            
+            this.botDebugTexts.push(botText);
+        });
     }
 }
 

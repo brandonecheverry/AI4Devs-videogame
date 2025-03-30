@@ -28,6 +28,21 @@ export const PLAYER_CONFIG = {
     }
 };
 
+// Configuración de los bots
+export const BOT_CONFIG = {
+    count: 1, // Número de bots a generar
+    minY: 150, // Posición Y mínima para generar bots (superior de la línea)
+    maxY: 450, // Posición Y máxima para generar bots (inferior de la línea)
+    initialX: 120, // Posición X inicial de los bots (igual que el jugador)
+    botConfig: {
+        minSprintTime: 3000, // Mínimo tiempo de sprint en milisegundos (3 segundos)
+        maxSprintTime: 8000, // Máximo tiempo de sprint en milisegundos (8 segundos)
+        reactionTimeMin: 300, // Tiempo mínimo de reacción en milisegundos
+        reactionTimeMax: 700  // Tiempo máximo de reacción en milisegundos
+    },
+    tintColors: [0xFF9999, 0x99FF99, 0x9999FF, 0xFFFF99, 0xFF99FF] // Colores para distinguir bots
+};
+
 // Configuración del semáforo
 export const TRAFFIC_LIGHT_CONFIG = {
     position: {
@@ -120,6 +135,7 @@ export const GAME_TEXTS = {
 export default {
     GAME_CONFIG,
     PLAYER_CONFIG,
+    BOT_CONFIG,
     TRAFFIC_LIGHT_CONFIG,
     LINES_CONFIG,
     GAME_STATES,
