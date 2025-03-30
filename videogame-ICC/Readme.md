@@ -31,3 +31,5 @@ As a user, I want to enable or disable certain features like hints or power-ups 
 Each letter will be extracted from the image assets\letters.svg
 The background image must be assets\background.svg
 
+# User interaction
+Use the mouse to select letters and form words.

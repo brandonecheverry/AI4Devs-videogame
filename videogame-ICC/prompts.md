@@ -27,12 +27,30 @@ Claude AI (sonnet 3.7)
 Create the background image in svg format for this game.
 
 
-
-
-**Prompt 2**
+**Prompt 3**
 Microsoft Copilot 365
 # Create the use cases 
 You are an expert Product Owner in game development. Explain the use cases of Wordament game in deep to be sent to development team.
 
+**Prompt 4**
+Is there any online free service to be used to word validation that supports english and spanish ?
+Is there any version to be downloaded ?
 
+
+# Game development
+**Prompt 1**
+Cursor AI (claude 3.7 sonnet thinking)
+
+Create a HTML , Javascript  and CSS based game following the readme instructions.
+Ask me all questions that you have to do this task.
+
+**Prompt 2**
+Add a language selection, use spanish as an alternative language. 
+Create a dictionary for spanish word validation.
+When spanish is selected the letter Ñ is enabled
+When english is selected the letter Ñ is disabled.
+
+**Prompt 3**
+Use @https://github.com/LibreOffice/dictionaries/blob/master/es  to create a spansih dictionary with 2000 words.
+Use @https://github.com/LibreOffice/dictionaries/blob/master/en  to create a english dictionary with 2000 words.
 
