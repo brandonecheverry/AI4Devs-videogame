@@ -199,7 +199,7 @@ class GameBoard {
 
     handleMouseUp() {
         if (this.selectedTiles.length > 0) {
-            this.submitWord();
+            this.validateSelectedWord();
         }
     }
 
@@ -229,7 +229,7 @@ class GameBoard {
     handleTouchEnd(event) {
         event.preventDefault();
         if (this.selectedTiles.length > 0) {
-            this.submitWord();
+            this.validateSelectedWord();
         }
     }
 
@@ -284,7 +284,7 @@ class GameBoard {
         document.getElementById('word-display').textContent = '';
     }
 
-    submitWord() {
+    validateSelectedWord() {
         if (this.currentWord.length >= 3) {
             // Pass the word to the game for validation and scoring
             game.validateWord(this.currentWord, this.selectedTiles);
@@ -318,7 +318,6 @@ class Game {
         
         // Buttons
         this.hintButton = document.getElementById('hint-btn');
-        this.submitButton = document.getElementById('submit-btn');
         this.clearButton = document.getElementById('clear-btn');
         this.newGameButton = document.getElementById('new-game-btn');
         this.settingsButton = document.getElementById('settings-btn');
@@ -351,7 +350,6 @@ class Game {
     setupEventListeners() {
         // Game control buttons
         this.hintButton.addEventListener('click', this.useHint.bind(this));
-        this.submitButton.addEventListener('click', () => this.board.submitWord());
         this.clearButton.addEventListener('click', () => this.board.clearSelection());
         
         // Menu buttons

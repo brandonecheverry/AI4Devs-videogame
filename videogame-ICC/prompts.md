@@ -57,3 +57,6 @@ Use @https://github.com/LibreOffice/dictionaries/blob/master/en/en_GB.dic to cre
 **Prompt 4**
 how Hint button works?
 Can you add this information in help section ?
+
+**Prompt 5**
+remove sumbit word functionality
