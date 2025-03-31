@@ -169,10 +169,10 @@ function toggleMusic() {
 function setupThreeJS() {
     // Create scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color(0x000000); // Pure black background
     
-    // Add fog for depth effect
-    scene.fog = new THREE.FogExp2(0x000000, 0.02);
+    // Add fog for depth effect with reduced density
+    scene.fog = new THREE.FogExp2(0x000000, 0.01); // Black fog
     
     // Create camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -183,6 +183,7 @@ function setupThreeJS() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.outputEncoding = THREE.sRGBEncoding; // Enable sRGB encoding for better color reproduction
     document.getElementById('game-canvas').appendChild(renderer.domElement);
     
     // Handle window resize
@@ -192,14 +193,37 @@ function setupThreeJS() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0x333333);
+    // Add enhanced lighting
+    const ambientLight = new THREE.AmbientLight(0x666666, 1.5); // Increased intensity
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 10, 7);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
+    // Main directional light (brighter)
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    mainLight.position.set(5, 10, 7);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 500;
+    mainLight.shadow.camera.left = -100;
+    mainLight.shadow.camera.right = 100;
+    mainLight.shadow.camera.top = 100;
+    mainLight.shadow.camera.bottom = -100;
+    scene.add(mainLight);
+    
+    // Secondary directional light (for fill)
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    fillLight.position.set(-5, 5, -5);
+    scene.add(fillLight);
+    
+    // Add point lights for better illumination
+    const pointLight1 = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight1.position.set(10, 5, -10);
+    scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight2.position.set(-10, 5, -10);
+    scene.add(pointLight2);
     
     // Add stars background for the ceiling
     createStarsBackground();
@@ -355,7 +379,7 @@ function createTunnel() {
     const tunnelSegmentLength = 20;
     const tunnelWidth = 8;
     const tunnelHeight = 8;
-    const wallThickness = 1; // Increased wall thickness to prevent gaps
+    const wallThickness = 1;
     
     // Load tunnel texture
     const textureLoader = new THREE.TextureLoader();
@@ -366,12 +390,13 @@ function createTunnel() {
     tunnelTexture.magFilter = THREE.LinearFilter;
     tunnelTexture.minFilter = THREE.LinearMipmapLinearFilter;
     
-    // Tunnel materials with texture
+    // Tunnel materials with enhanced emissive properties
     const tunnelMaterial = new THREE.MeshStandardMaterial({
         map: tunnelTexture,
         metalness: 0.8,
         roughness: 0.3,
-        emissive: 0x111111,
+        emissive: 0x222222, // Increased emissive intensity
+        emissiveIntensity: 0.2, // Added emissive intensity
         side: THREE.DoubleSide
     });
     
