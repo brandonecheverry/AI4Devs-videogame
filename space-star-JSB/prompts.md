@@ -6,7 +6,7 @@
 - Usar meta-prompting para mejorar la calidad del prompt.
 - Llevar el prompt a Cursor en modo Agent con selección de modelo Auto con un resultado bastante aceptable.
 - Iterar con Cursor hasta conseguir el gameplay deseado.
-- Generar la música con Suno y añadiéndola a los assets hace que funcione automáticamenten porque Cursor ya se había encargado.
+- Generar la música con [Suno](https://suno.com/) y añadiéndola a los assets hace que funcione automáticamenten porque Cursor ya se había encargado.
 - Los sonidos de efectos los he descargado de [Freesound](https://freesound.org/) y los he añadido a los assets. También se han aplicado automáticamente.
 - Los fondos tanto para la pantalla de menu como el juego y las texturas del tunel las he creado con el nuevo generador de imágenes de ChatGPT.
 - He creado unas imágenes de las naves con el generador de imágenes de ChatGPT y luego he creado los modelos texturizados con [Meshy](https://www.meshy.ai/).
