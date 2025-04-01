@@ -174,7 +174,7 @@ def create_index_html(base_path):
         file.write('        </ul>\n')
         file.write('    </div>\n')
         file.write('    <footer>\n')
-        file.write('        <p>© <span>AI4Devs</span> students - 2024/10</p>\n')
+        file.write('        <p>© <span>AI4Devs</span> students - 2025/02</p>\n')
         file.write('    </footer>\n')
         
         # Agregar el código JavaScript para la funcionalidad de cambio de vista
