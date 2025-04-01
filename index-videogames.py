@@ -160,16 +160,24 @@ def create_index_html(base_path):
 
         # Listar todas las carpetas y crear un enlace para cada juego
         for item in directories:
-            # Extrae el nombre del juego separándolo de las iniciales del nombre
-            game_name = item.split('-')[0]
+            # Extrae el nombre del juego y las iniciales del autor
+            parts = item.split('-')
+            game_name = parts[0]
+            # Obtener iniciales del autor (si existen)
+            author_initials = parts[-1] if len(parts) > 1 else ""
+            
             # Capitaliza la primera letra de cada palabra
             game_name = ' '.join(word.capitalize() for word in game_name.split())
             
             # Obtener el icono apropiado para el juego
             icon = get_icon_for_game(game_name)
             
-            # Escribir la entrada con el icono
-            file.write(f'            <li><a href="{item}/index.html"><i class="fas fa-{icon}"></i> {game_name}</a></li>\n')
+            # Escribir la entrada con el icono y el autor
+            file.write(f'            <li><a href="{item}/index.html">\n')
+            file.write(f'                <i class="fas fa-{icon}"></i> {game_name}\n')
+            if author_initials and author_initials != "index":
+                file.write(f'                <span class="author-info">Autor: {author_initials}</span>\n')
+            file.write(f'            </a></li>\n')
 
         file.write('        </ul>\n')
         file.write('    </div>\n')
