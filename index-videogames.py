@@ -11,12 +11,13 @@ def create_index_html(base_path):
         file.write('<html lang="es">\n')
         file.write('<head>\n')
         file.write('    <meta charset="UTF-8">\n')
+        file.write('    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n')
         file.write('    <title>Índice de Juegos - AI4Devs</title>\n')
         file.write('    <link rel="stylesheet" href="styles.css">\n')
         file.write('</head>\n')
         file.write('<body>\n')
         file.write('    <div id="game-index">\n')
-        file.write('        <h1>Selecciona tu juego</h1>\n')
+        file.write('        <h1>🎮 Selecciona tu juego</h1>\n')
         file.write('        <ul>\n')
 
         # Obtener y ordenar todas las carpetas por nombre alfabéticamente
@@ -26,12 +27,14 @@ def create_index_html(base_path):
         for item in directories:
             # Extrae el nombre del juego separándolo de las iniciales del nombre
             game_name = item.split('-')[0]
+            # Capitaliza la primera letra de cada palabra
+            game_name = ' '.join(word.capitalize() for word in game_name.split())
             file.write(f'            <li><a href="{item}/index.html">{game_name}</a></li>\n')
 
         file.write('        </ul>\n')
         file.write('    </div>\n')
         file.write('    <footer>\n')
-        file.write('        <p>© AI4Devs students</p>\n')
+        file.write('        <p>© AI4Devs students - 2024/10</p>\n')
         file.write('    </footer>\n')
         file.write('</body>\n')
         file.write('</html>\n')
