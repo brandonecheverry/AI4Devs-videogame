@@ -83,136 +83,140 @@ class Gargoyle extends Phaser.Physics.Arcade.Sprite {
     }
     
     update(player) {
-        if (!this.isActive || !this.scene || this.scene.isDead) return;
-        
-        // Si está petrificada, gestionar ese estado
-        if (this.isPetrified) {
-            this.updatePetrifiedState();
-            return;
-        }
-        
-        // Reducir cooldowns
-        if (this.attackCooldown > 0) {
-            this.attackCooldown -= 16; // Aproximación a delta time (60fps)
-        }
-        
-        if (this.swoopTimer > 0) {
-            this.swoopTimer -= 16;
-        }
-        
-        // Si está en ataque en picado, continuar con ese movimiento
-        if (this.isSwoopping) {
-            // Verificar si ha chocado con el suelo
-            if (this.body.touching.down) {
-                this.endSwoop();
+        try {
+            // Si no está activa o no hay un jugador válido, no hacer nada
+            if (!this.active || !player || !player.active) return;
+            
+            // Si está en estado de piedra, actualizar ese estado
+            if (this.isPetrified) {
+                this.updatePetrifiedState();
+                return;
             }
-            return;
-        }
-        
-        // Si está en animación de ataque, no hacer más
-        if (this.isAttacking) return;
-        
-        // Calcular distancia al jugador
-        const distanceToPlayer = Phaser.Math.Distance.Between(
-            this.x, this.y,
-            player.x, player.y
-        );
-        
-        // Si el jugador está dentro del rango de detección
-        if (distanceToPlayer <= this.detectionRange) {
-            // Determinar lado del jugador
-            const playerSide = player.x < this.x ? -1 : 1;
             
-            // Voltear el sprite según la posición del jugador
-            this.setFlipX(playerSide === -1);
+            // Reducir los cooldowns
+            if (this.attackCooldown > 0) {
+                this.attackCooldown -= 16;
+            }
             
-            // Si está en rango de ataque y el ataque está disponible
-            if (distanceToPlayer <= this.attackRange && this.attackCooldown <= 0) {
-                // Elegir entre ataque en picado o petrificación
-                if (this.health < this.maxHealth / 2 && Math.random() < 0.4) {
-                    // Si tiene poca vida, probabilidad de petrificarse para protegerse
-                    this.petrify();
-                } else if (this.swoopTimer <= 0) {
-                    // Ataque en picado hacia el jugador
-                    this.swoopAttack(player);
+            if (this.swoopTimer > 0) {
+                this.swoopTimer -= 16;
+            }
+            
+            // Si está en ataque en picado, continuar con ese movimiento
+            if (this.isSwoopping) {
+                // Verificar si ha chocado con el suelo
+                if (this.body.touching.down) {
+                    this.endSwoop();
+                }
+                return;
+            }
+            
+            // Si está en animación de ataque, no hacer más
+            if (this.isAttacking) return;
+            
+            // Calcular distancia al jugador
+            const distanceToPlayer = Phaser.Math.Distance.Between(
+                this.x, this.y,
+                player.x, player.y
+            );
+            
+            // Si el jugador está dentro del rango de detección
+            if (distanceToPlayer <= this.detectionRange) {
+                // Determinar lado del jugador
+                const playerSide = player.x < this.x ? -1 : 1;
+                
+                // Voltear el sprite según la posición del jugador
+                this.setFlipX(playerSide === -1);
+                
+                // Si está en rango de ataque y el ataque está disponible
+                if (distanceToPlayer <= this.attackRange && this.attackCooldown <= 0) {
+                    // IMPORTANTE: Cuidado con llamadas recursivas
+                    const randomValue = Phaser.Math.FloatBetween(0, 1); // Usar método seguro de Phaser
+                    
+                    // Elegir entre ataque en picado o petrificación
+                    if (this.health < this.maxHealth / 2 && randomValue < 0.4) {
+                        // Si tiene poca vida, probabilidad de petrificarse para protegerse
+                        this.petrify();
+                    } else if (this.swoopTimer <= 0) {
+                        // Ataque en picado hacia el jugador
+                        this.swoopAttack(player);
+                    } else {
+                        // Perseguir al jugador con velocidad alta
+                        this.setVelocityX(this.speed * playerSide * 1.2);
+                        
+                        // Movimiento en Y calculado para volar en arco
+                        const heightDifference = player.y - this.y;
+                        // Volar más alto si el jugador está por debajo
+                        const targetY = heightDifference > 0 
+                            ? player.y - 100 - Phaser.Math.FloatBetween(0, 50)
+                            : player.y - 50 + Phaser.Math.FloatBetween(0, 30);
+                        
+                        // Movimiento suave en Y
+                        // IMPORTANTE: Usar un ID específico para la tween y detener tweens existentes
+                        this.scene.tweens.killTweensOf(this);
+                        this.scene.tweens.add({
+                            targets: this,
+                            y: targetY,
+                            duration: 800,
+                            ease: 'Sine.easeInOut'
+                        });
+                    }
                 } else {
-                    // Perseguir al jugador con velocidad alta y patrón evasivo
-                    this.setVelocityX(this.speed * playerSide * 1.2);
+                    // Perseguir al jugador con movimiento
+                    this.setVelocityX(this.speed * playerSide);
                     
-                    // Movimiento en Y calculado para volar en arco
-                    const heightDifference = player.y - this.y;
-                    // Volar más alto si el jugador está por debajo
-                    const targetY = heightDifference > 0 
-                        ? player.y - 100 - Math.random() * 50 
-                        : player.y - 50 + Math.random() * 30;
-                    
-                    // Movimiento suave en Y
-                    this.scene.tweens.add({
-                        targets: this,
-                        y: targetY,
-                        duration: 800,
-                        ease: 'Sine.easeInOut',
-                        onComplete: () => {
-                            if (this.active && Math.random() < 0.3) {
-                                // Pequeño movimiento aleatorio
-                                this.scene.tweens.add({
-                                    targets: this,
-                                    y: this.y + (Math.random() * 60 - 30),
-                                    duration: 400,
-                                    ease: 'Sine.easeInOut'
-                                });
-                            }
-                        }
-                    });
+                    // Implementar patrón de vuelo evasivo, pero con menor frecuencia
+                    if (Phaser.Math.FloatBetween(0, 1) < 0.01) { // Reducido de 0.03 a 0.01
+                        // Maniobra evasiva aleatoria
+                        const evasionY = this.y + (Phaser.Math.FloatBetween(-50, 50));
+                        
+                        // IMPORTANTE: Detener tweens existentes
+                        this.scene.tweens.killTweensOf(this);
+                        this.scene.tweens.add({
+                            targets: this,
+                            y: evasionY,
+                            duration: 500,
+                            ease: 'Sine.easeInOut'
+                        });
+                    }
                 }
             } else {
-                // Perseguir al jugador con movimiento sinuoso
-                this.setVelocityX(this.speed * playerSide);
+                // Comportamiento de patrulla en el aire con movimiento simple
+                this.setVelocityX(this.speed * this.direction * 0.7);
                 
-                // Implementar patrón de vuelo evasivo
-                if (Math.random() < 0.03) {
-                    // Maniobra evasiva aleatoria
-                    const evasionY = this.y + (Math.random() * 100 - 50);
+                // Cambiar altura periódicamente pero con menor frecuencia
+                if (Phaser.Math.FloatBetween(0, 1) < 0.005) { // Reducido de 0.02 a 0.005
+                    const newY = this.y + (Phaser.Math.FloatBetween(-40, 40));
+                    // Limitar altura mínima y máxima
+                    const boundedY = Math.max(100, Math.min(400, newY));
+                    
+                    // IMPORTANTE: Detener tweens existentes
+                    this.scene.tweens.killTweensOf(this);
                     this.scene.tweens.add({
                         targets: this,
-                        y: evasionY,
-                        duration: 500,
+                        y: boundedY,
+                        duration: 1200,
                         ease: 'Sine.easeInOut'
                     });
                 }
-            }
-        } else {
-            // Comportamiento de patrulla en el aire con movimiento sinuoso
-            this.setVelocityX(this.speed * this.direction * 0.7);
-            
-            // Cambiar altura periódicamente para un patrón más natural
-            if (Math.random() < 0.02) {
-                const newY = this.y + (Math.random() * 80 - 40);
-                // Limitar altura mínima y máxima
-                const boundedY = Math.max(100, Math.min(400, newY));
                 
-                this.scene.tweens.add({
-                    targets: this,
-                    y: boundedY,
-                    duration: 1200,
-                    ease: 'Sine.easeInOut'
-                });
+                // Cambiar dirección ocasionalmente o al chocar
+                if (Phaser.Math.FloatBetween(0, 1) < 0.005 || this.body.blocked.left || this.body.blocked.right) {
+                    this.direction *= -1;
+                    this.setFlipX(this.direction === -1);
+                }
             }
             
-            // Cambiar dirección ocasionalmente o al chocar
-            if (Math.random() < 0.01 || this.body.blocked.left || this.body.blocked.right) {
-                this.direction *= -1;
-                this.setFlipX(this.direction === -1);
+            // Reproducir animación si está disponible y no está ya reproduciendo una animación
+            if (!this.anims.isPlaying) {
+                if (this.anims.exists('gargoyle-fly')) {
+                    this.play('gargoyle-fly', true);
+                } else if (this.anims.exists('zombie-walk')) {
+                    this.play('zombie-walk', true); // Fallback
+                }
             }
-        }
-        
-        // Reproducir animación si está disponible
-        if (!this.anims.isPlaying) {
-            if (this.anims.exists('gargoyle-fly')) {
-                this.play('gargoyle-fly', true);
-            } else {
-                this.play('zombie-walk', true); // Fallback
-            }
+        } catch (error) {
+            console.error("Error en Gargoyle.update:", error);
         }
     }
     

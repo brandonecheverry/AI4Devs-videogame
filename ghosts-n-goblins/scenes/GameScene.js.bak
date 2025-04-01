@@ -31,7 +31,7 @@ class GameScene extends Phaser.Scene {
         
         // Variables para salto múltiple
         this.jumpCount = 0;
-        this.maxJumps = 3; // Asegurar que se permiten hasta 3 saltos consecutivos
+        this.maxJumps = 3; // Número máximo de saltos consecutivos permitidos
         this.hasDoubleJump = true;
         this.canDoubleJump = false;
         this.isFalling = false;
@@ -69,8 +69,8 @@ class GameScene extends Phaser.Scene {
         this.doubleJumping = false;
         this.hasDoubleJump = true; // Habilidad de doble salto activada por defecto
         this.jumpCount = 0; // Contador para saltos múltiples
-        this.maxJumps = 3; // Asegurar que se permiten hasta 3 saltos consecutivos
-        this.jumpForce = -400; // Incrementar la fuerza de salto para mayor altura
+        this.maxJumps = 3; // Número máximo de saltos consecutivos permitidos
+        this.jumpForce = -350; // Fuerza de salto (negativa para ir hacia arriba)
         this.pointsMultiplier = 1;
         
         // Temporizadores
@@ -613,31 +613,6 @@ class GameScene extends Phaser.Scene {
         } catch (error) {
             console.error('Error inicializando audio:', error);
         }
-
-        // Inicializar grupos de decoraciones
-        this.trees = this.add.group();
-        this.graves = this.add.group();
-        this.crosses = this.add.group();
-
-        // Añadir elementos a los grupos
-        this.trees.add(this.add.image(300, 520, 'dead-tree').setOrigin(0.5, 1));
-        this.graves.add(this.add.image(150, 520, 'tombstone1').setOrigin(0.5, 1));
-        this.crosses.add(this.add.image(400, 520, 'cross').setOrigin(0.5, 1));
-
-        // Ajustar posición de elementos para alinearlos con el suelo
-        this.trees.getChildren().forEach(tree => {
-            tree.setY(this.cameras.main.height - tree.height);
-        });
-        this.graves.getChildren().forEach(grave => {
-            grave.setY(this.cameras.main.height - grave.height);
-        });
-        this.crosses.getChildren().forEach(cross => {
-            cross.setY(this.cameras.main.height - cross.height);
-        });
-
-        // Inicializar sistema de puntuación
-        this.score = 0;
-        this.scoreText = this.add.text(16, 16, 'SCORE: 0', { fontSize: '32px', fill: '#FFF' });
     }
 
     // Método para crear el nivel
@@ -645,7 +620,7 @@ class GameScene extends Phaser.Scene {
         // Piso principal - plataformas extendidas a lo largo del nivel
         for (let x = 0; x < this.levelWidth; x += 256) {
             // Piso base con tierra
-            this.platforms.create(x, this.cameras.main.height, 'extended-ground').setOrigin(0, 1).refreshBody();
+            this.platforms.create(x, 584, 'extended-ground').setOrigin(0, 1).refreshBody();
         }
         
         // Plataformas elevadas
@@ -1639,14 +1614,28 @@ class GameScene extends Phaser.Scene {
     // Método para manejar colisión entre armas y cofres
     handleWeaponChestCollision(weapon, chest) {
         try {
-            if (!chest.isOpen && !chest.isOpening) {
+            if (!chest.isOpen) {
                 console.log('Cofre golpeado por arma');
+                chest.open();
                 
-                // Llamar al método hit en vez de open
-                const wasHit = chest.hit();
+                // Generar recompensas aleatorias
+                const rand = Math.random();
                 
-                // Si el cofre fue golpeado y el arma no es penetrante, destruirla
-                if (wasHit && !weapon.isPenetrating) {
+                if (rand < 0.4) { // 40% probabilidad de arma
+                    this.spawnWeaponPickup(chest.x, chest.y - 30);
+                } else if (rand < 0.7) { // 30% probabilidad de power-up
+                    const powerupTypes = ['health', 'invincibility', 'doubleScore'];
+                    const randomType = Phaser.Utils.Array.GetRandom(powerupTypes);
+                    const powerup = new Powerup(this, chest.x, chest.y - 30, randomType);
+                    this.powerups.add(powerup);
+                } else { // 30% probabilidad de puntos
+                    const points = 500;
+                    this.addPoints(points);
+                    this.showFloatingText(chest.x, chest.y - 30, `+${points}`, 0xFFD700);
+                }
+                
+                // Si el arma no es penetrante, destruirla al impactar
+                if (!weapon.isPenetrating) {
                     weapon.handleImpact();
                 }
             }
@@ -1850,338 +1839,93 @@ class GameScene extends Phaser.Scene {
     // Método para manejar colisión entre el jugador y los power-ups
     handlePlayerPowerupCollision(player, powerup) {
         try {
-            // Comprobar que el powerup tenga el método collect
-            if (powerup && powerup.active && typeof powerup.collect === 'function') {
-                // Llamar al método collect del power-up que contiene toda la lógica
-                powerup.collect();
-            } else {
-                // Fallback para powerups antiguos que no tienen el método collect
-                
-                // Obtener el tipo de power-up
-                const powerupType = powerup.powerupType || powerup.type || 'points';
-                
-                // Aplicar efecto según el tipo
-                switch (powerupType) {
-                    case 'armor':
-                    case 'health':
-                        // Restaurar armadura si no la tiene
-                        if (!this.hasArmor) {
-                            this.hasArmor = true;
-                            this.player.setTexture('arthur-idle');
-                            this.showFloatingText(
-                                powerup.x,
-                                powerup.y - 30,
-                                '¡Armadura restaurada!',
-                                0x00FF00
-                            );
-                        } else {
-                            // Sino, dar una vida extra
-                            this.lives++;
-                            this.updateLivesText();
-                            this.showFloatingText(
-                                powerup.x,
-                                powerup.y - 30,
-                                '+1 Vida',
-                                0x00FF00
-                            );
-                        }
-                        break;
-                        
-                    case 'invincible':
-                    case 'invincibility':
-                        // Dar invulnerabilidad temporal extendida
-                        this.isInvulnerable = true;
-                        
-                        // Efecto visual de invencibilidad
-                        const invincibilityEffect = this.tweens.add({
-                            targets: this.player,
-                            alpha: 0.7,
-                            duration: 100,
-                            ease: 'Linear',
-                            yoyo: true,
-                            repeat: -1
-                        });
-                        
+            // Obtener el tipo de power-up
+            const powerupType = powerup.powerupType;
+            
+            // Aplicar efecto según el tipo
+            switch (powerupType) {
+                case 'health':
+                    // Restaurar armadura si no la tiene
+                    if (!this.hasArmor) {
+                        this.hasArmor = true;
+                        this.player.setTexture('arthur-idle');
                         this.showFloatingText(
                             powerup.x,
                             powerup.y - 30,
-                            '¡Invencibilidad!',
-                            0xFFFF00
+                            '¡Armadura restaurada!',
+                            0x00FF00
                         );
-                        
-                        // Terminar después de 10 segundos
-                        this.time.delayedCall(10000, () => {
-                            this.isInvulnerable = false;
-                            invincibilityEffect.stop();
-                            this.player.alpha = 1;
-                        });
-                        break;
-                        
-                    case 'points':
-                    case 'doubleScore':
-                        // Añadir puntos o duplicar el multiplicador
-                        const oldMultiplier = this.pointsMultiplier || 1;
-                        this.pointsMultiplier = (this.pointsMultiplier || 1) * 2;
-                        
-                        if (this.multiplierText) {
-                            this.multiplierText.setText(`Multiplicador: x${this.pointsMultiplier.toFixed(1)}`);
-                        }
-                        
-                        // Añadir puntos base
-                        if (this.score !== undefined) {
-                            this.score += 300;
-                            if (typeof this.updateScoreText === 'function') {
-                                this.updateScoreText();
-                            }
-                        }
-                        
+                    } else {
+                        // Sino, dar una vida extra
+                        this.lives++;
+                        this.updateLivesText();
                         this.showFloatingText(
                             powerup.x,
                             powerup.y - 30,
-                            '¡Puntos x2!',
-                            0x00FFFF
+                            '+1 Vida',
+                            0x00FF00
                         );
-                        
-                        // Volver al multiplicador normal después de 20 segundos
-                        this.time.delayedCall(20000, () => {
-                            this.pointsMultiplier = oldMultiplier;
-                            if (this.multiplierText) {
-                                this.multiplierText.setText(`Multiplicador: x${this.pointsMultiplier.toFixed(1)}`);
-                            }
-                        });
-                        break;
-                        
-                    case 'magic':
-                        // Recuperar vida
-                        if (this.lives !== undefined && this.lives < 5) {
-                            this.lives++;
-                            if (typeof this.updateLivesText === 'function') {
-                                this.updateLivesText();
-                            }
-                            
-                            this.showFloatingText(
-                                powerup.x,
-                                powerup.y - 30,
-                                '¡Vida Extra!',
-                                0x00FF00
-                            );
-                        }
-                        break;
-                }
-                
-                // Reproducir sonido de power-up
-                if (this.audioManager && typeof this.audioManager.playSound === 'function') {
-                    this.audioManager.playSound('powerup');
-                } else if (this.sound && this.sound.play) {
-                    // Fallback si no existe audioManager
-                    this.sound.play('powerup-collect', { volume: 0.5 });
-                }
-                
-                // Destruir el power-up
-                powerup.destroy();
+                    }
+                    break;
+                    
+                case 'invincibility':
+                    // Dar invulnerabilidad temporal extendida
+                    this.isInvulnerable = true;
+                    
+                    // Efecto visual de invencibilidad
+                    const invincibilityEffect = this.tweens.add({
+                        targets: this.player,
+                        alpha: 0.7,
+                        duration: 100,
+                        ease: 'Linear',
+                        yoyo: true,
+                        repeat: -1
+                    });
+                    
+                    this.showFloatingText(
+                        powerup.x,
+                        powerup.y - 30,
+                        '¡Invencibilidad!',
+                        0xFFFF00
+                    );
+                    
+                    // Terminar después de 10 segundos
+                    this.time.delayedCall(10000, () => {
+                        this.isInvulnerable = false;
+                        invincibilityEffect.stop();
+                        this.player.alpha = 1;
+                    });
+                    break;
+                    
+                case 'doubleScore':
+                    // Duplicar el multiplicador de puntos temporalmente
+                    const oldMultiplier = this.pointsMultiplier;
+                    this.pointsMultiplier *= 2;
+                    this.multiplierText.setText(`Multiplicador: x${this.pointsMultiplier.toFixed(1)}`);
+                    
+                    this.showFloatingText(
+                        powerup.x,
+                        powerup.y - 30,
+                        '¡Puntos x2!',
+                        0x00FFFF
+                    );
+                    
+                    // Volver al multiplicador normal después de 20 segundos
+                    this.time.delayedCall(20000, () => {
+                        this.pointsMultiplier = oldMultiplier;
+                        this.multiplierText.setText(`Multiplicador: x${this.pointsMultiplier.toFixed(1)}`);
+                    });
+                    break;
             }
+            
+            // Reproducir sonido de power-up
+            this.audioManager.playSound('powerup');
+            
+            // Destruir el power-up
+            powerup.destroy();
         } catch (error) {
             console.error('Error en handlePlayerPowerupCollision:', error);
         }
-    }
-    
-    // Método para generar powerups modernos
-    spawnPowerup(x, y, type) {
-        try {
-            console.log(`Generando powerup de tipo ${type} en (${x}, ${y})`);
-            
-            // Verificar que el tipo sea válido
-            const validTypes = ['armor', 'points', 'magic', 'invincible', 'spear', 'dagger', 'torch', 'axe'];
-            if (!validTypes.includes(type)) {
-                console.warn(`Tipo de powerup no válido: ${type}, usando 'points' como fallback`);
-                type = 'points';
-            }
-            
-            // Verificar que la textura exista
-            const textureName = `powerup_${type}`;
-            if (!this.textures.exists(textureName)) {
-                console.error(`La textura ${textureName} no existe. Creando respaldo...`);
-                
-                // Crear textura de respaldo
-                this.createPowerupTexture(textureName, type);
-            }
-            
-            // Crear el powerup utilizando la clase Powerup
-            const powerup = new Powerup(this, x, y, type);
-            
-            // Asegurarse de que el powerup sea visible
-            powerup.setVisible(true);
-            powerup.setAlpha(1);
-            powerup.setScale(1.5); // Hacer el powerup más grande
-            powerup.setDepth(10);  // Asegurar que se dibuje por encima de otros elementos
-            
-            // Añadir el powerup al grupo
-            this.powerups.add(powerup);
-            
-            // Loggear información para depuración
-            console.log(`Powerup creado: Tipo=${type}, Textura=${powerup.texture.key}, ` +
-                      `Posición=(${powerup.x}, ${powerup.y}), ` + 
-                      `Visible=${powerup.visible}, Alpha=${powerup.alpha}, ` +
-                      `Escala=${powerup.scaleX}x${powerup.scaleY}`);
-            
-            return powerup;
-        } catch (error) {
-            console.error('Error al generar powerup:', error);
-            return null;
-        }
-    }
-    
-    // Método para crear textura de powerup si no existe
-    createPowerupTexture(textureName, type) {
-        try {
-            // Determinar color y forma según el tipo
-            let color, shape;
-            
-            switch(type) {
-                case 'armor':
-                    color = 0x3498db; // Azul
-                    shape = 'circle';
-                    break;
-                case 'points':
-                    color = 0xf1c40f; // Amarillo
-                    shape = 'star';
-                    break;
-                case 'magic':
-                    color = 0x2ecc71; // Verde
-                    shape = 'diamond';
-                    break;
-                case 'invincible':
-                    color = 0xe74c3c; // Rojo
-                    shape = 'hexagon';
-                    break;
-                case 'spear':
-                    color = 0x95a5a6; // Plateado
-                    shape = 'rect';
-                    break;
-                case 'dagger':
-                    color = 0xbdc3c7; // Plateado claro
-                    shape = 'triangle';
-                    break;
-                case 'torch':
-                    color = 0xe67e22; // Naranja
-                    shape = 'flame';
-                    break;
-                case 'axe':
-                    color = 0x7f8c8d; // Gris
-                    shape = 'square';
-                    break;
-                default:
-                    color = 0xffffff; // Blanco
-                    shape = 'circle';
-            }
-            
-            // Crear gráfico
-            const graphics = this.add.graphics();
-            const size = 32;
-            
-            // Dibujar forma
-            graphics.fillStyle(color, 1);
-            
-            switch(shape) {
-                case 'circle':
-                    graphics.fillCircle(size/2, size/2, size/2);
-                    break;
-                case 'star':
-                    this.drawStar(graphics, size/2, size/2, 5, size/2, size/4);
-                    break;
-                case 'diamond':
-                    graphics.fillPoints([
-                        { x: size/2, y: 0 },
-                        { x: size, y: size/2 },
-                        { x: size/2, y: size },
-                        { x: 0, y: size/2 }
-                    ], true);
-                    break;
-                case 'hexagon':
-                    this.drawHexagon(graphics, size/2, size/2, size/2);
-                    break;
-                case 'rect':
-                    graphics.fillRect(size/4, size/4, size/2, size);
-                    break;
-                case 'triangle':
-                    graphics.fillPoints([
-                        { x: size/2, y: 0 },
-                        { x: size, y: size },
-                        { x: 0, y: size }
-                    ], true);
-                    break;
-                case 'flame':
-                    this.drawFlame(graphics, size/2, size/2, size/2);
-                    break;
-                case 'square':
-                    graphics.fillRect(0, 0, size, size);
-                    break;
-            }
-            
-            // Añadir brillo
-            graphics.lineStyle(2, 0xffffff, 0.8);
-            graphics.strokeCircle(size/2, size/2, size/2 - 2);
-            
-            // Generar textura
-            graphics.generateTexture(textureName, size, size);
-            
-            // Limpiar y destruir gráfico
-            graphics.clear();
-            graphics.destroy();
-            
-            console.log(`Textura de respaldo ${textureName} creada correctamente`);
-            return true;
-        } catch (error) {
-            console.error(`Error al crear textura de respaldo ${textureName}:`, error);
-            return false;
-        }
-    }
-    
-    // Método para dibujar una estrella
-    drawStar(graphics, x, y, points, outerRadius, innerRadius) {
-        const angleStep = Math.PI * 2 / points;
-        const halfStep = angleStep / 2;
-        
-        const vertices = [];
-        
-        for (let i = 0; i < points; i++) {
-            const angle = i * angleStep - Math.PI / 2;
-            const nextAngle = angle + halfStep;
-            
-            vertices.push({ x: x + Math.cos(angle) * outerRadius, y: y + Math.sin(angle) * outerRadius });
-            vertices.push({ x: x + Math.cos(nextAngle) * innerRadius, y: y + Math.sin(nextAngle) * innerRadius });
-        }
-        
-        graphics.fillPoints(vertices, true);
-    }
-    
-    // Método para dibujar un hexágono
-    drawHexagon(graphics, x, y, radius) {
-        const vertices = [];
-        
-        for (let i = 0; i < 6; i++) {
-            const angle = i * Math.PI / 3;
-            vertices.push({ x: x + radius * Math.cos(angle), y: y + radius * Math.sin(angle) });
-        }
-        
-        graphics.fillPoints(vertices, true);
-    }
-    
-    // Método para dibujar una llama
-    drawFlame(graphics, x, y, radius) {
-        // Puntos base para una forma de llama
-        const vertices = [
-            { x: x, y: y - radius },
-            { x: x + radius / 2, y: y - radius / 2 },
-            { x: x + radius / 3, y: y },
-            { x: x + radius / 2, y: y + radius / 3 },
-            { x: x, y: y + radius / 2 },
-            { x: x - radius / 2, y: y + radius / 3 },
-            { x: x - radius / 3, y: y },
-            { x: x - radius / 2, y: y - radius / 2 }
-        ];
-        
-        graphics.fillPoints(vertices, true);
     }
 
     // Método principal de actualización del juego - se ejecuta en cada frame
@@ -2297,30 +2041,44 @@ class GameScene extends Phaser.Scene {
             
             // Salto cuando se presiona la tecla de flecha arriba y está en el suelo
             if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
-                if (this.player.body.touching.down || this.jumpCount < this.maxJumps) {
+                if (this.player.body.touching.down) {
+                    // Primer salto desde el suelo
                     this.player.setVelocityY(this.jumpForce);
                     this.isJumping = true;
-                    this.jumpCount++;
+                    this.jumpCount = 1;
                     this.player.anims.play('jump', true);
+                    
+                    // Detener sonido de caminar cuando salta
                     if (this.walkSoundPlaying) {
                         if (this.audioManager) {
                             this.audioManager.playSfx('walk', { stop: true });
                         }
                         this.walkSoundPlaying = false;
                     }
+                    
+                    // Sonido de salto
                     if (this.audioManager) {
                         this.audioManager.playSfx('jump', { volume: 0.5 });
+                        console.log('Reproduciendo sonido de salto');
                     }
-                    if (this.jumpCount > 1) {
+                } else if (this.isJumping && this.jumpCount < this.maxJumps) {
+                    // Saltos adicionales (2º y 3º)
+                    this.player.setVelocityY(this.jumpForce * 0.9); // Ligeramente menos potente
+                    this.jumpCount++;
+                    
+                    // Sonido de doble/triple salto
+                    if (this.audioManager) {
                         this.audioManager.playSfx('double-jump', { volume: 0.7 });
+                        console.log(`Reproduciendo sonido de salto múltiple (${this.jumpCount})`);
+                    }
+                    
+                    // Mostrar efectos visuales diferentes según el número de salto
+                    if (this.jumpCount === 2) {
+                        // Efecto para segundo salto (más sutil)
                         this.showJumpParticles();
-                        // Configurar y mostrar partículas para salto múltiple
-                        const particleIndex = Phaser.Math.Between(8, 11);
-                        const alphaIndex = Phaser.Math.Between(2, 8);
-                        const textureName = `jump_particle_${particleIndex}_${alphaIndex}`;
-                        this.jumpEmitter.setTexture(textureName);
-                        this.jumpEmitter.setPosition(this.player.x, this.player.y + 20);
-                        this.jumpEmitter.explode();
+                    } else if (this.jumpCount === 3) {
+                        // Efecto para tercer salto (más intenso)
+                        this.showJumpParticlesWithIntensity(1.5);
                     }
                 }
             }
@@ -2465,63 +2223,41 @@ class GameScene extends Phaser.Scene {
     }
 
     showJumpParticles() {
-        if (!this.jumpParticles || !this.jumpEmitter) return;
+        if (!this.jumpParticles) return;
+        
         try {
             // Alternar entre diferentes texturas para variedad
             const particleIndex = Phaser.Math.Between(8, 11);
             const alphaIndex = Phaser.Math.Between(2, 8);
             const textureName = `jump_particle_${particleIndex}_${alphaIndex}`;
+            
             console.log(`Usando textura de partícula: ${textureName}`);
+            
             // Actualizar textura y posición
             this.jumpEmitter.setTexture(textureName);
             this.jumpEmitter.setPosition(this.player.x, this.player.y + 20);
             this.jumpEmitter.setSpeed({ min: 50, max: 200 });
+            this.jumpEmitter.setScale({ start: 0.6, end: 0 });
+            this.jumpEmitter.setLifespan(600);
+            this.jumpEmitter.setQuantity(10);
+            
             // Explotar partículas
-            this.jumpEmitter.explode(10);
+            this.jumpEmitter.explode();
+            
             console.log('Mostrando partículas de salto básicas');
         } catch (error) {
             console.error('Error al mostrar partículas de salto:', error);
         }
     }
-
-    // Método para actualizar la puntuación
-    updateScore(points) {
-        this.score += points;
-        this.scoreText.setText(`SCORE: ${this.score}`);
-    }
-
-    // Método para mostrar texto flotante en cualquier punto del juego
-    showFloatingText(x, y, text, color = 0xFFFFFF) {
-        try {
-            // Crear texto con estilo adecuado
-            const floatingText = this.add.text(x, y, text, {
-                fontFamily: 'Arial',
-                fontSize: '20px',
-                fontStyle: 'bold',
-                color: `#${color.toString(16).padStart(6, '0')}`,
-                stroke: '#000',
-                strokeThickness: 4,
-                align: 'center'
-            }).setOrigin(0.5).setDepth(10);
-            
-            // Animación de elevación y desaparición
-            this.tweens.add({
-                targets: floatingText,
-                y: y - 50,
-                alpha: 0,
-                duration: 1500,
-                ease: 'Cubic.easeOut',
-                onComplete: () => {
-                    floatingText.destroy();
-                }
-            });
-            
-            return floatingText;
-        } catch (error) {
-            console.error('Error al mostrar texto flotante:', error);
-            return null;
+    
+    showLandingParticles() {
+        // Mostrar partículas al aterrizar desde una altura
+        if (this.player.body.velocity.y > 100) {  // Solo si cae con cierta velocidad
+            console.log('Mostrando partículas de aterrizaje');
+            this.landingEmitter.setPosition(this.player.x, this.player.y + 30);
+            this.landingEmitter.explode();
         }
     }
 }
 
-export default GameScene;
+export default GameScene; 

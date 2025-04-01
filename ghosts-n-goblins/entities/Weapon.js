@@ -56,7 +56,7 @@ class Weapon extends Phaser.Physics.Arcade.Sprite {
         if (this.weaponConfig[type]) {
             // Aumentar el daño para que tenga más efecto sobre el jefe
             this.damage = this.weaponConfig[type].damage * 2; // Duplicar el daño original
-            this.speed = this.weaponConfig[type].speed;
+            this.speed = this.weaponConfig[type].speed * 1.5; // Aumentar la velocidad en un 50% para mayor alcance
             this.gravityY = this.weaponConfig[type].gravityY;
             if (this.weaponConfig[type].size) {
                 this.setSize(

@@ -155,7 +155,8 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
     
     update(player) {
         try {
-            if (!this.active || !this.isActive || this.scene.isDead) return;
+            // Verificar si está activo y si el jugador es válido
+            if (!this.active || !player || !player.active) return;
             
             // Si está emergiendo, no hacer nada más
             if (this.isEmerging) return;
@@ -178,13 +179,13 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityX(this.speed * 1.3 * escapeDirection);
                 this.setFlipX(escapeDirection === -1);
                 
-                // Intentar saltar para escapar
-                if (this.body.touching.down && Math.random() < 0.05) {
+                // Intentar saltar para escapar, pero con probabilidad limitada
+                if (this.body.touching.down && Phaser.Math.FloatBetween(0, 1) < 0.01) { // Reducido de 0.05 a 0.01
                     this.setVelocityY(-300);
                 }
                 
                 // Intentar atacar mientras escapa
-                if (this.attackCooldown <= 0 && Math.random() < 0.3) {
+                if (this.attackCooldown <= 0 && Phaser.Math.FloatBetween(0, 1) < 0.1) { // Reducido de 0.3 a 0.1
                     this.attack(player);
                 }
                 
@@ -202,22 +203,22 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 // Si está en rango de ataque y el ataque está disponible
                 if (distanceToPlayer <= this.attackRange && this.attackCooldown <= 0) {
                     // Probabilidades de ataque según la distancia
-                    let attackProbability = 0.8; // Probabilidad base alta
+                    let attackProbability = 0.3; // Reducido de 0.8 a 0.3
                     
                     // Si el jugador está muy cerca, menor probabilidad de ataque
                     if (distanceToPlayer < 100) {
-                        attackProbability = 0.5; // Priorizar movimiento para distanciarse
+                        attackProbability = 0.2; // Reducido de 0.5 a 0.2
                         
                         // Alejarse un poco para tener mejor ángulo de tiro
                         const retreatDirection = playerSide * -1;
                         this.setVelocityX(this.speed * 0.8 * retreatDirection);
                     } else if (distanceToPlayer > 250) {
                         // Distancia óptima, mayor probabilidad de ataque
-                        attackProbability = 0.9;
+                        attackProbability = 0.4; // Reducido de 0.9 a 0.4
                     }
                     
                     // Decidir si atacar basado en la probabilidad
-                    if (Math.random() < attackProbability) {
+                    if (Phaser.Math.FloatBetween(0, 1) < attackProbability) {
                         // Detenerse brevemente antes de atacar
                         this.setVelocityX(0);
                         this.attack(player);
@@ -228,7 +229,7 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 // Comportamiento de persecución inteligente
                 if (Math.abs(player.y - this.y) > 50 && this.body.touching.down) {
                     // El jugador está a una altura diferente, intentar posicionarse en un punto ventajoso
-                    if (Math.random() < 0.02) {
+                    if (Phaser.Math.FloatBetween(0, 1) < 0.005) { // Reducido de 0.02 a 0.005
                         this.setVelocityY(-300); // Saltar para reposicionarse
                     }
                 }
@@ -236,11 +237,11 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 // Si no está atacando, moverse hacia/alrededor del jugador
                 if (distanceToPlayer < 150) {
                     // Estando cerca, movimiento lateral aleatorio para confundir
-                    const moveDirection = Math.random() < 0.3 ? playerSide * -1 : playerSide;
+                    const moveDirection = Phaser.Math.FloatBetween(0, 1) < 0.3 ? playerSide * -1 : playerSide;
                     this.setVelocityX(this.speed * moveDirection);
                 } else {
-                    // Acercarse al jugador a velocidad variable
-                    const approachSpeed = this.speed * (0.7 + Math.random() * 0.5);
+                    // Acercarse al jugador a velocidad variable pero más predecible
+                    const approachSpeed = this.speed * (0.7 + Phaser.Math.FloatBetween(0, 0.3)); // Reducido el rango aleatorio
                     this.setVelocityX(approachSpeed * playerSide);
                 }
                 
@@ -248,7 +249,7 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 if (this.body.velocity.x !== 0) {
                     if (this.anims.exists('skeleton-walk')) {
                         this.play('skeleton-walk', true);
-                    } else {
+                    } else if (this.anims.exists('zombie-walk')) {
                         this.play('zombie-walk', true); // Fallback
                     }
                 } else {
@@ -261,13 +262,13 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityX(this.speed * this.direction * 0.7);
                 
                 // Cambiar dirección al chocar con obstáculos o aleatoriamente
-                if (this.body.blocked.left || this.body.blocked.right || Math.random() < 0.01) {
+                if (this.body.blocked.left || this.body.blocked.right || Phaser.Math.FloatBetween(0, 1) < 0.005) { // Reducido de 0.01 a 0.005
                     this.direction *= -1;
                     this.setFlipX(this.direction === -1);
                 }
                 
                 // Pausas ocasionales
-                if (Math.random() < 0.005) {
+                if (Phaser.Math.FloatBetween(0, 1) < 0.002) { // Reducido de 0.005 a 0.002
                     this.setVelocityX(0);
                     
                     // Animar estado idle
@@ -276,10 +277,10 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                     }
                     
                     // Reanudar movimiento después de una pausa
-                    this.scene.time.delayedCall(1000 + Math.random() * 1500, () => {
+                    this.scene.time.delayedCall(1000, () => {
                         if (this.active) {
                             // Posibilidad de cambiar dirección después de la pausa
-                            if (Math.random() < 0.5) {
+                            if (Phaser.Math.FloatBetween(0, 1) < 0.5) {
                                 this.direction *= -1;
                                 this.setFlipX(this.direction === -1);
                             }
@@ -287,7 +288,7 @@ class Skeleton extends Phaser.Physics.Arcade.Sprite {
                     });
                 } else if (this.anims.exists('skeleton-walk')) {
                     this.play('skeleton-walk', true);
-                } else {
+                } else if (this.anims.exists('zombie-walk')) {
                     this.play('zombie-walk', true); // Fallback
                 }
             }

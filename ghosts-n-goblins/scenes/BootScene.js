@@ -57,16 +57,24 @@ class BootScene extends Phaser.Scene {
         this.load.image('fog', 'assets/effects/fog.png');
         this.load.image('ghost-light', 'assets/effects/ghost_light.png');
         
-        // Cargar efectos visuales para el salto
-        // Cargar partículas con el formato correcto según los archivos existentes
-        for (let i = 0; i < 12; i++) {
+        // Cargar efectos de partículas
+        this.load.image('sparkle', 'assets/images/Weapons/sparkle.png');
+        // Partícula genérica para efectos de impacto
+        this.load.image('particle', 'assets/effects/jump_particle_1.png');
+        
+        // Cargar partículas para saltos múltiples
+        this.load.image('jump_trail', 'assets/effects/jump_trail.png');
+        
+        // Cargar todas las variantes de partículas para salto
+        for (let i = 8; i <= 11; i++) {
+            // Partículas básicas
             this.load.image(`jump_particle_${i}`, `assets/effects/jump_particle_${i}.png`);
-            // Cargar versiones con diferentes niveles de transparencia
-            for (let alpha of [8, 6, 4, 2]) {
-                this.load.image(`jump_particle_${i}_${alpha}`, `assets/effects/jump_particle_${i}_${alpha}.png`);
+            
+            // Partículas con efectos de color
+            for (let j = 2; j <= 8; j += 2) {
+                this.load.image(`jump_particle_${i}_${j}`, `assets/effects/jump_particle_${i}_${j}.png`);
             }
         }
-        this.load.image('jump_trail', 'assets/effects/jump_trail.png');
         
         // Cargar los nuevos sprites de Arthur (guerrero enano)
         this.load.spritesheet('arthur-idle', 'assets/images/Arthur/Idle.png', { 
@@ -126,6 +134,18 @@ class BootScene extends Phaser.Scene {
         this.load.image('powerup_magic', 'assets/images/Items/powerup_magic.png');
         this.load.image('powerup_invincible', 'assets/images/Items/powerup_invincible.png');
         
+        // Cargar texturas para todos los powerups (alias que simplifican el código)
+        this.load.image('powerup_points', 'assets/images/Items/powerup_points.png');
+        this.load.image('powerup_armor', 'assets/images/Items/powerup_armor.png');
+        this.load.image('powerup_invincible', 'assets/images/Items/powerup_invincible.png');
+        this.load.image('powerup_magic', 'assets/images/Items/powerup_magic.png');
+        
+        // Cargar versiones simplificadas de nombres para armas (sin el prefijo weapon_)
+        this.load.image('powerup_spear', 'assets/images/Items/powerup_weapon_spear.png');
+        this.load.image('powerup_dagger', 'assets/images/Items/powerup_weapon_dagger.png');
+        this.load.image('powerup_torch', 'assets/images/Items/powerup_weapon_torch.png');
+        this.load.image('powerup_axe', 'assets/images/Items/powerup_weapon_axe.png');
+        
         this.load.spritesheet('arthur-run', 'assets/images/Arthur/Run.png', { 
             frameWidth: 40, 
             frameHeight: 52 
@@ -178,11 +198,6 @@ class BootScene extends Phaser.Scene {
         this.load.image('dagger-pickup', 'assets/images/Weapons/dagger-pickup.png');
         this.load.image('torch-pickup', 'assets/images/Weapons/torch-pickup.png');
         this.load.image('axe-pickup', 'assets/images/Weapons/axe-pickup.png');
-        
-        // Cargar efectos de partículas
-        this.load.image('sparkle', 'assets/images/Weapons/sparkle.png');
-        // Partícula genérica para efectos de impacto
-        this.load.image('particle', 'assets/effects/jump_particle_1.png');
         
         // Cargar efectos de sonido para armas
         this.load.audio('throw', 'assets/audio/weapons/throw.mp3');
@@ -325,6 +340,9 @@ class BootScene extends Phaser.Scene {
             } else {
                 this.scene.start('TitleScene');
             }
+            
+            // Verificar carga de texturas de powerups
+            this.verifyPowerupTextures();
         });
     }
     
@@ -346,6 +364,196 @@ class BootScene extends Phaser.Scene {
         } else {
             console.log('Audio ya desbloqueado');
         }
+    }
+    
+    // Método para verificar si las texturas se cargaron correctamente
+    verifyPowerupTextures() {
+        const powerupTextures = [
+            'powerup_armor',
+            'powerup_points',
+            'powerup_magic',
+            'powerup_invincible',
+            'powerup_weapon_spear',
+            'powerup_weapon_dagger',
+            'powerup_weapon_torch',
+            'powerup_weapon_axe'
+        ];
+        
+        let texturesFound = 0;
+        let texturesMissing = [];
+        
+        console.log('Verificando texturas de powerups:');
+        
+        powerupTextures.forEach(textureName => {
+            if (this.textures.exists(textureName)) {
+                const frames = this.textures.get(textureName).getFrameNames();
+                const baseFrame = this.textures.getFrame(textureName);
+                
+                if (baseFrame && (baseFrame.width <= 1 || baseFrame.height <= 1)) {
+                    console.warn(`⚠ Textura ${textureName} existe pero tiene un tamaño incorrecto: ${baseFrame.width}x${baseFrame.height}`);
+                    texturesMissing.push(textureName);
+                } else {
+                    texturesFound++;
+                    console.log(`✓ Textura ${textureName} cargada correctamente (${baseFrame.width}x${baseFrame.height})`);
+                }
+            } else {
+                texturesMissing.push(textureName);
+                console.error(`✗ Textura ${textureName} NO encontrada`);
+            }
+        });
+        
+        console.log(`Texturas cargadas: ${texturesFound}/${powerupTextures.length}`);
+        
+        // Si faltan texturas, generarlas proceduralmente
+        if (texturesMissing.length > 0) {
+            console.warn('Creando texturas de respaldo para los powerups faltantes...');
+            texturesMissing.forEach(textureName => {
+                this.createBackupTexture(textureName);
+            });
+        }
+    }
+    
+    // Método para crear texturas de respaldo para los powerups
+    createBackupTexture(textureName) {
+        // Determinar color y forma según el tipo de powerup
+        let color, shape;
+        
+        if (textureName.includes('armor')) {
+            color = 0x3498db; // Azul para armadura
+            shape = 'circle';
+        } else if (textureName.includes('points')) {
+            color = 0xf1c40f; // Amarillo para puntos
+            shape = 'star';
+        } else if (textureName.includes('magic')) {
+            color = 0x2ecc71; // Verde para magia
+            shape = 'diamond';
+        } else if (textureName.includes('invincible')) {
+            color = 0xe74c3c; // Rojo para invencibilidad
+            shape = 'hexagon';
+        } else if (textureName.includes('spear')) {
+            color = 0x95a5a6; // Plateado para lanza
+            shape = 'rect';
+        } else if (textureName.includes('dagger')) {
+            color = 0xbdc3c7; // Plateado claro para daga
+            shape = 'triangle';
+        } else if (textureName.includes('torch')) {
+            color = 0xe67e22; // Naranja para antorcha
+            shape = 'flame';
+        } else if (textureName.includes('axe')) {
+            color = 0x7f8c8d; // Gris para hacha
+            shape = 'square';
+        } else {
+            color = 0xffffff; // Blanco por defecto
+            shape = 'circle';
+        }
+        
+        console.log(`Creando textura de respaldo para ${textureName} (${shape}, ${color.toString(16)})`);
+        
+        // Crear un gráfico para la textura
+        const graphics = this.add.graphics();
+        const size = 32; // Tamaño base
+        
+        // Dibujar forma según el tipo
+        graphics.fillStyle(color, 1);
+        
+        switch (shape) {
+            case 'circle':
+                graphics.fillCircle(size/2, size/2, size/2);
+                break;
+            case 'star':
+                this.drawStar(graphics, size/2, size/2, 5, size/2, size/4);
+                break;
+            case 'diamond':
+                graphics.fillPoints([
+                    { x: size/2, y: 0 },
+                    { x: size, y: size/2 },
+                    { x: size/2, y: size },
+                    { x: 0, y: size/2 }
+                ], true);
+                break;
+            case 'hexagon':
+                this.drawHexagon(graphics, size/2, size/2, size/2);
+                break;
+            case 'rect':
+                graphics.fillRect(size/4, size/4, size/2, size);
+                break;
+            case 'triangle':
+                graphics.fillPoints([
+                    { x: size/2, y: 0 },
+                    { x: size, y: size },
+                    { x: 0, y: size }
+                ], true);
+                break;
+            case 'flame':
+                this.drawFlame(graphics, size/2, size/2, size/2);
+                break;
+            case 'square':
+                graphics.fillRect(0, 0, size, size);
+                break;
+        }
+        
+        // Añadir un brillo
+        graphics.lineStyle(2, 0xffffff, 0.8);
+        graphics.strokeCircle(size/2, size/2, size/2 - 2);
+        
+        // Generar textura a partir del gráfico
+        try {
+            graphics.generateTexture(textureName, size, size);
+            console.log(`✓ Textura de respaldo ${textureName} creada correctamente`);
+        } catch (error) {
+            console.error(`Error al generar textura de respaldo ${textureName}:`, error);
+        }
+        
+        // Limpiar el gráfico
+        graphics.clear();
+        graphics.destroy();
+    }
+    
+    // Método para dibujar una estrella
+    drawStar(graphics, x, y, points, outerRadius, innerRadius) {
+        const angleStep = Math.PI * 2 / points;
+        const halfStep = angleStep / 2;
+        
+        const vertices = [];
+        
+        for (let i = 0; i < points; i++) {
+            const angle = i * angleStep - Math.PI / 2;
+            const nextAngle = angle + halfStep;
+            
+            vertices.push({ x: x + Math.cos(angle) * outerRadius, y: y + Math.sin(angle) * outerRadius });
+            vertices.push({ x: x + Math.cos(nextAngle) * innerRadius, y: y + Math.sin(nextAngle) * innerRadius });
+        }
+        
+        graphics.fillPoints(vertices, true);
+    }
+    
+    // Método para dibujar un hexágono
+    drawHexagon(graphics, x, y, radius) {
+        const vertices = [];
+        
+        for (let i = 0; i < 6; i++) {
+            const angle = i * Math.PI / 3;
+            vertices.push({ x: x + radius * Math.cos(angle), y: y + radius * Math.sin(angle) });
+        }
+        
+        graphics.fillPoints(vertices, true);
+    }
+    
+    // Método para dibujar una llama
+    drawFlame(graphics, x, y, radius) {
+        // Puntos base para una forma de llama
+        const vertices = [
+            { x: x, y: y - radius },
+            { x: x + radius / 2, y: y - radius / 2 },
+            { x: x + radius / 3, y: y },
+            { x: x + radius / 2, y: y + radius / 3 },
+            { x: x, y: y + radius / 2 },
+            { x: x - radius / 2, y: y + radius / 3 },
+            { x: x - radius / 3, y: y },
+            { x: x - radius / 2, y: y - radius / 2 }
+        ];
+        
+        graphics.fillPoints(vertices, true);
     }
 }
 
